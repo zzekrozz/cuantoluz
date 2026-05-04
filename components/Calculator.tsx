@@ -39,7 +39,7 @@ interface TimeRange {
   endM: number;
 }
 
-type ActiveCalc = 'cycle' | 'time' | 'ev' | 'myday';
+type ActiveCalc = 'time' | 'ev' | 'myday';
 
 function calculateVariableCost(
   prices: PriceData[],
@@ -74,51 +74,11 @@ function calculateVariableCost(
   return totalCost;
 }
 
-function findBestAndWorstCycle(
-  prices: PriceData[],
-  durationHours: number,
-  totalKwh: number
-) {
-  let bestHour = 0;
-  let worstHour = 0;
-  let bestCost = Infinity;
-  let worstCost = -Infinity;
-
-  for (let hour = 0; hour < 24; hour++) {
-    const cost = calculateVariableCost(prices, hour, 0, durationHours, totalKwh);
-
-    if (cost < bestCost) {
-      bestCost = cost;
-      bestHour = hour;
-    }
-
-    if (cost > worstCost) {
-      worstCost = cost;
-      worstHour = hour;
-    }
-  }
-
-  return {
-    bestHour,
-    worstHour,
-    bestCost,
-    worstCost
-  };
-}
-
 export default function Calculator({ prices, currentHour }: Props) {
   const minP = prices.reduce((a, b) => (a.price < b.price ? a : b));
   const maxP = prices.reduce((a, b) => (a.price > b.price ? a : b));
 
-  const [activeCalc, setActiveCalc] = useState<ActiveCalc>('cycle');
-
-  const [cycleApp, setCycleApp] = useState('lavadora_basica');
-  const [cycleMode, setCycleMode] = useState<'simple' | 'advanced'>('simple');
-  const [cycleStartH, setCycleStartH] = useState(currentHour);
-  const [cycleStartM, setCycleStartM] = useState(0);
-  const [cycleDuration, setCycleDuration] = useState(2);
-  const [cycleKwh, setCycleKwh] = useState(0.9);
-  const [cycleResult, setCycleResult] = useState<any>(null);
+  const [activeCalc, setActiveCalc] = useState<ActiveCalc>('time');
 
   const [timeApp, setTimeApp] = useState('aire_inverter');
   const [timeKw, setTimeKw] = useState(1.0);
@@ -143,42 +103,19 @@ export default function Calculator({ prices, currentHour }: Props) {
   const [myDayItems, setMyDayItems] = useState<MyDayItem[]>([]);
   const [showOptimization, setShowOptimization] = useState(false);
 
-  const handleCycleAppChange = (key: string) => {
-    setCycleApp(key);
+  const getApplianceKw = (key: string) => {
     const app = appliances[key];
-    setCycleKwh(app.kwh);
-    setCycleDuration(Math.max(1, Math.round(app.duration)));
-  };
 
-  const calcCycle = () => {
-    const app = appliances[cycleApp];
-    const startH = cycleStartH;
-    const startM = cycleMode === 'simple' ? 0 : cycleStartM;
-    const safeDuration = Math.max(1, Math.round(cycleDuration));
+    if (app.type === 'cycle') {
+      return app.kwh / Math.max(1, app.duration || 1);
+    }
 
-    const cost = calculateVariableCost(prices, startH, startM, safeDuration, cycleKwh);
-    const bestWorst = findBestAndWorstCycle(prices, safeDuration, cycleKwh);
-
-    setCycleDuration(safeDuration);
-
-    setCycleResult({
-      cost,
-      costAtBest: bestWorst.bestCost,
-      costAtWorst: bestWorst.worstCost,
-      bestHour: bestWorst.bestHour,
-      worstHour: bestWorst.worstHour,
-      app,
-      startH,
-      startM,
-      duration: safeDuration,
-      kwh: cycleKwh,
-      priceAtHour: getPriceAtHour(prices, startH)
-    });
+    return app.kw;
   };
 
   const handleTimeAppChange = (key: string) => {
     setTimeApp(key);
-    setTimeKw(appliances[key].kw);
+    setTimeKw(getApplianceKw(key));
   };
 
   const addTimeRange = () => {
@@ -238,7 +175,8 @@ export default function Calculator({ prices, currentHour }: Props) {
         from: hm(r.startH, r.startM),
         to: hm(r.endH % 24, r.endM),
         cost: rangeCost,
-        duration: durationH
+        duration: durationH,
+        kwh: totalKwhRange
       });
     });
 
@@ -295,17 +233,10 @@ export default function Calculator({ prices, currentHour }: Props) {
 
   const addToMyDay = () => {
     const app = appliances[myDayApp];
-
-    let cost: number;
-    let kwh: number;
-
-    if (app.type === 'cycle') {
-      kwh = app.kwh;
-      cost = calculateVariableCost(prices, myDayHour, myDayMin, myDayDuration, kwh);
-    } else {
-      kwh = app.kw * myDayDuration;
-      cost = calculateVariableCost(prices, myDayHour, myDayMin, myDayDuration, kwh);
-    }
+    const safeDuration = Math.max(1, Math.round(myDayDuration));
+    const kw = getApplianceKw(myDayApp);
+    const kwh = kw * safeDuration;
+    const cost = calculateVariableCost(prices, myDayHour, myDayMin, safeDuration, kwh);
 
     setMyDayItems([
       ...myDayItems,
@@ -316,13 +247,14 @@ export default function Calculator({ prices, currentHour }: Props) {
         icon: app.icon,
         startH: myDayHour,
         startM: myDayMin,
-        duration: myDayDuration,
+        duration: safeDuration,
         kwh,
         cost,
         type: app.type
       }
     ]);
 
+    setMyDayDuration(safeDuration);
     setShowOptimization(false);
   };
 
@@ -358,8 +290,7 @@ export default function Calculator({ prices, currentHour }: Props) {
   const totalKwh = myDayItems.reduce((sum, item) => sum + item.kwh, 0);
 
   const calcTabs = [
-    { id: 'cycle' as const, icon: '🧺', label: 'Lavadora' },
-    { id: 'time' as const, icon: '❄️', label: 'Aire/TV' },
+    { id: 'time' as const, icon: '⚡', label: 'Aparatos' },
     { id: 'ev' as const, icon: '🔋', label: 'Coche EV' },
     { id: 'myday' as const, icon: '📋', label: 'Mi día' }
   ];
@@ -387,163 +318,9 @@ export default function Calculator({ prices, currentHour }: Props) {
         ))}
       </div>
 
-      <div className={`calc-section ${activeCalc === 'cycle' ? 'active' : ''}`}>
+      <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
         <div className="card">
-          <div className="card-title">🧺 Lavadora, secadora y lavavajillas</div>
-
-          {cycleResult && (
-            <div className="result-top">
-              <div className="result-top-label">Te costará</div>
-              <div
-                className="result-top-price"
-                style={{ color: color(cycleResult.cost / cycleResult.kwh) }}
-              >
-                {fmtMoney(cycleResult.cost)}
-              </div>
-
-              <div className="result-top-info">
-                {cycleResult.app.icon} {cycleResult.app.label} a las{' '}
-                {hm(cycleResult.startH, cycleResult.startM)} durante{' '}
-                {cycleResult.duration}h
-              </div>
-
-              <div className="result-top-comparison">
-                <div className="result-mini">
-                  <span className="result-mini-label">
-                    Mejor bloque ({h(cycleResult.bestHour)})
-                  </span>
-                  <span className="result-mini-value green">
-                    {fmtMoney(cycleResult.costAtBest)}
-                  </span>
-                </div>
-
-                <div className="result-mini">
-                  <span className="result-mini-label">
-                    Peor bloque ({h(cycleResult.worstHour)})
-                  </span>
-                  <span className="result-mini-value red">
-                    {fmtMoney(cycleResult.costAtWorst)}
-                  </span>
-                </div>
-
-                <div className="result-mini">
-                  <span className="result-mini-label">Diferencia</span>
-                  <span className="result-mini-value accent">
-                    {fmtMoney(cycleResult.costAtWorst - cycleResult.costAtBest)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="calculator-grid">
-            <div className="big-field field-wide">
-              <label>Aparato</label>
-              <select value={cycleApp} onChange={e => handleCycleAppChange(e.target.value)}>
-                {Object.entries(appliances)
-                  .filter(([_, value]) => value.type === 'cycle')
-                  .map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value.icon} {value.label} · {value.kwh} kWh
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="big-field">
-              <label>Modo de hora</label>
-              <div className="toggle-row big">
-                <button
-                  type="button"
-                  className={`toggle-opt ${cycleMode === 'simple' ? 'active' : ''}`}
-                  onClick={() => setCycleMode('simple')}
-                >
-                  Solo horas
-                </button>
-                <button
-                  type="button"
-                  className={`toggle-opt ${cycleMode === 'advanced' ? 'active' : ''}`}
-                  onClick={() => setCycleMode('advanced')}
-                >
-                  Con minutos
-                </button>
-              </div>
-            </div>
-
-            {cycleMode === 'simple' ? (
-              <div className="big-field">
-                <label>Hora de inicio</label>
-                <select value={cycleStartH} onChange={e => setCycleStartH(parseInt(e.target.value))}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {h(i)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <>
-                <div className="big-field">
-                  <label>Hora</label>
-                  <select value={cycleStartH} onChange={e => setCycleStartH(parseInt(e.target.value))}>
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {String(i).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="big-field">
-                  <label>Minutos</label>
-                  <select value={cycleStartM} onChange={e => setCycleStartM(parseInt(e.target.value))}>
-                    {[0, 15, 30, 45].map(minute => (
-                      <option key={minute} value={minute}>
-                        {String(minute).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-
-            <div className="big-field">
-              <label>Duración (h)</label>
-              <input
-                type="number"
-                value={cycleDuration}
-                onChange={e => {
-                  const value = parseInt(e.target.value, 10);
-                  setCycleDuration(Number.isNaN(value) ? 1 : Math.max(1, Math.min(24, value)));
-                }}
-                min="1"
-                max="24"
-                step="1"
-                inputMode="numeric"
-              />
-            </div>
-
-            <div className="big-field">
-              <label>Consumo total del ciclo (kWh)</label>
-              <input
-                type="number"
-                value={cycleKwh}
-                onChange={e => setCycleKwh(parseFloat(e.target.value) || 0)}
-                min="0.1"
-                max="10"
-                step="0.1"
-              />
-            </div>
-          </div>
-
-          <button type="button" className="btn-calc-big" onClick={calcCycle}>
-            Calcular ⚡
-          </button>
-        </div>
-      </div>
-            <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
-        <div className="card">
-          <div className="card-title">❄️ Aire, TV, calefacción por horas</div>
+          <div className="card-title">⚡ Aparatos por horas</div>
 
           {timeResult && (
             <div className="result-top">
@@ -557,28 +334,28 @@ export default function Calculator({ prices, currentHour }: Props) {
 
               <div className="result-top-info">
                 {timeResult.app.icon} {timeResult.app.label} ·{' '}
-                {timeResult.totalHours.toFixed(2)}h totales
+                {timeResult.totalHours.toFixed(2)}h · {timeResult.totalKwh.toFixed(2)} kWh
               </div>
 
               <div className="range-details">
                 {timeResult.rangeDetails.map((range: any, index: number) => (
                   <div key={index}>
-                    · {range.from} → {range.to} ({range.duration.toFixed(2)}h) ={' '}
-                    {fmtMoney(range.cost)}
+                    · {range.from} → {range.to} ({range.duration.toFixed(2)}h ·{' '}
+                    {range.kwh.toFixed(2)} kWh) = {fmtMoney(range.cost)}
                   </div>
                 ))}
               </div>
 
               <div className="result-top-comparison">
                 <div className="result-mini">
-                  <span className="result-mini-label">Hora barata</span>
+                  <span className="result-mini-label">Todo en hora barata</span>
                   <span className="result-mini-value green">
                     {fmtMoney(timeResult.costAtBest)}
                   </span>
                 </div>
 
                 <div className="result-mini">
-                  <span className="result-mini-label">Hora cara</span>
+                  <span className="result-mini-label">Todo en hora cara</span>
                   <span className="result-mini-value red">
                     {fmtMoney(timeResult.costAtWorst)}
                   </span>
@@ -599,24 +376,30 @@ export default function Calculator({ prices, currentHour }: Props) {
               <label>Aparato</label>
               <select value={timeApp} onChange={e => handleTimeAppChange(e.target.value)}>
                 {Object.entries(appliances)
-                  .filter(([_, value]) => value.type === 'time')
-                  .map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value.icon} {value.label} · {value.kw} kW
-                    </option>
-                  ))}
+                  .filter(([_, value]) => value.type === 'time' || value.type === 'cycle')
+                  .map(([key, value]) => {
+                    const kw = value.type === 'cycle'
+                      ? value.kwh / Math.max(1, value.duration || 1)
+                      : value.kw;
+
+                    return (
+                      <option key={key} value={key}>
+                        {value.icon} {value.label} · {kw.toFixed(2)} kW aprox.
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
             <div className="big-field">
-              <label>Potencia (kW)</label>
+              <label>Potencia estimada (kW)</label>
               <input
                 type="number"
                 value={timeKw}
                 onChange={e => setTimeKw(parseFloat(e.target.value) || 0)}
-                min="0.05"
-                max="10"
-                step="0.05"
+                min="0.01"
+                max="20"
+                step="0.01"
               />
             </div>
           </div>
@@ -902,19 +685,9 @@ export default function Calculator({ prices, currentHour }: Props) {
               <div className="big-field">
                 <label>Aparato</label>
                 <select value={myDayApp} onChange={e => setMyDayApp(e.target.value)}>
-                  <optgroup label="Ciclos">
+                  <optgroup label="Aparatos">
                     {Object.entries(appliances)
-                      .filter(([_, value]) => value.type === 'cycle')
-                      .map(([key, value]) => (
-                        <option key={key} value={key}>
-                          {value.icon} {value.label}
-                        </option>
-                      ))}
-                  </optgroup>
-
-                  <optgroup label="Por horas">
-                    {Object.entries(appliances)
-                      .filter(([_, value]) => value.type === 'time')
+                      .filter(([_, value]) => value.type === 'time' || value.type === 'cycle')
                       .map(([key, value]) => (
                         <option key={key} value={key}>
                           {value.icon} {value.label}
@@ -1068,30 +841,23 @@ function CalculatorStyles() {
 
       .calc-nav {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 16px;
       }
 
-      .calc-nav button,
-      .calc-section button,
-      .toggle-row button,
-      .time-range-card button,
-      .myday-list button {
+      .calc-nav-btn {
         all: unset;
         box-sizing: border-box;
-        font-family: 'DM Sans', sans-serif;
-        cursor: pointer;
-      }
-
-      .calc-nav-btn {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 14px 8px;
-        color: var(--text-soft);
+        cursor: pointer;
+        font-family: inherit;
         text-align: center;
         transition: all 0.2s ease;
+        color: var(--text-soft);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1150,7 +916,6 @@ function CalculatorStyles() {
         border-radius: 16px;
         padding: 22px;
         margin-bottom: 22px;
-        animation: up 0.3s ease both;
       }
 
       .result-top-label {
@@ -1231,10 +996,6 @@ function CalculatorStyles() {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
-      .field-wide {
-        grid-column: span 2;
-      }
-
       .big-field {
         margin-bottom: 14px;
       }
@@ -1286,6 +1047,8 @@ function CalculatorStyles() {
       }
 
       .toggle-opt {
+        all: unset;
+        box-sizing: border-box;
         flex: 1;
         padding: 12px 14px;
         border-radius: 10px;
@@ -1299,6 +1062,7 @@ function CalculatorStyles() {
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
+        cursor: pointer;
       }
 
       .toggle-opt:hover {
@@ -1313,6 +1077,8 @@ function CalculatorStyles() {
       }
 
       .btn-calc-big {
+        all: unset;
+        box-sizing: border-box;
         width: 100%;
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: white;
@@ -1329,6 +1095,7 @@ function CalculatorStyles() {
         text-align: center;
         letter-spacing: -0.2px;
         transition: all 0.2s ease;
+        cursor: pointer;
       }
 
       .btn-calc-big:hover {
@@ -1391,6 +1158,8 @@ function CalculatorStyles() {
       }
 
       .trange-remove {
+        all: unset;
+        box-sizing: border-box;
         width: 100%;
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.25);
@@ -1405,6 +1174,7 @@ function CalculatorStyles() {
         justify-content: center;
         text-align: center;
         transition: all 0.2s ease;
+        cursor: pointer;
       }
 
       .trange-remove:hover {
@@ -1412,6 +1182,8 @@ function CalculatorStyles() {
       }
 
       .btn-add-range {
+        all: unset;
+        box-sizing: border-box;
         width: 100%;
         background: var(--accent-bg);
         color: var(--accent);
@@ -1427,6 +1199,7 @@ function CalculatorStyles() {
         justify-content: center;
         text-align: center;
         transition: all 0.2s ease;
+        cursor: pointer;
       }
 
       .btn-add-range:hover {
@@ -1511,6 +1284,8 @@ function CalculatorStyles() {
       }
 
       .myday-remove {
+        all: unset;
+        box-sizing: border-box;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid var(--border);
         color: var(--muted);
@@ -1523,6 +1298,7 @@ function CalculatorStyles() {
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
+        cursor: pointer;
       }
 
       .myday-remove:hover {
@@ -1556,7 +1332,7 @@ function CalculatorStyles() {
 
       @media (max-width: 767px) {
         .calc-nav {
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: 1fr;
         }
 
         .card {
@@ -1567,10 +1343,6 @@ function CalculatorStyles() {
         .calculator-grid,
         .calculator-grid.ev-grid {
           grid-template-columns: 1fr;
-        }
-
-        .field-wide {
-          grid-column: span 1;
         }
 
         .result-top-price {
