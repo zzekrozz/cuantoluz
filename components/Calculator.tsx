@@ -36,6 +36,41 @@ interface TimeRange {
 
 type ActiveCalc = 'cycle' | 'time' | 'ev' | 'myday';
 
+function calculateVariableCost(
+  prices: PriceData[],
+  startH: number,
+  startM: number,
+  durationHours: number,
+  totalKwh: number
+) {
+  if (!prices?.length || durationHours <= 0 || totalKwh <= 0) return 0;
+
+  let totalCost = 0;
+  let minutesLeft = Math.round(durationHours * 60);
+  let currentHour = startH;
+  let currentMinute = startM;
+
+  const kwhPerMinute = totalKwh / minutesLeft;
+
+  while (minutesLeft > 0) {
+    const minutesUntilNextHour = currentMinute === 0 ? 60 : 60 - currentMinute;
+    const minutesThisBlock = Math.min(minutesLeft, minutesUntilNextHour);
+
+    const hourPrice = getPriceAtHour(prices, currentHour);
+    const kwhThisBlock = kwhPerMinute * minutesThisBlock;
+
+    totalCost += kwhThisBlock * hourPrice;
+
+    minutesLeft -= minutesThisBlock;
+    currentMinute = 0;
+    currentHour = (currentHour + 1) % 24;
+  }
+
+  return totalCost;
+}
+
+export default function Calculator({ prices, currentHour }: Props) {
+
 export default function Calculator({ prices, currentHour }: Props) {
   const minP = prices.reduce((a, b) => a.price < b.price ? a : b);
   const maxP = prices.reduce((a, b) => a.price > b.price ? a : b);
