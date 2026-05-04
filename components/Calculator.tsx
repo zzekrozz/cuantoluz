@@ -1584,6 +1584,175 @@ function CalculatorStyles() {
   box-shadow: inset 0 0 0 1px var(--border);
 }
       }
+      /* FIX DEFINITIVO BOTONES CALCULADORA */
+
+.calc-nav button,
+.calc-section button,
+.toggle-row button,
+.time-range-card button,
+.myday-list button {
+  all: unset !important;
+  box-sizing: border-box !important;
+  font-family: 'DM Sans', sans-serif !important;
+  cursor: pointer !important;
+}
+
+/* Botones de pestañas superiores */
+.calc-nav-btn {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 14px 8px !important;
+  color: var(--text-soft) !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.calc-nav-btn:hover {
+  border-color: var(--accent) !important;
+  transform: translateY(-1px) !important;
+}
+
+.calc-nav-btn.active {
+  background: var(--accent-bg) !important;
+  border-color: var(--accent) !important;
+  color: var(--text) !important;
+}
+
+/* Botones tipo Solo horas / Con minutos / Casa / Rápida */
+.toggle-opt {
+  flex: 1 !important;
+  padding: 12px 14px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--text-soft) !important;
+  background: transparent !important;
+  min-height: 44px !important;
+  text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.toggle-opt:hover {
+  color: var(--text) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.toggle-opt.active {
+  background: var(--surface3) !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 0 0 1px var(--border) !important;
+}
+
+/* Botones grandes: Calcular, Añadir, Optimizar */
+.btn-calc-big {
+  width: 100% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: white !important;
+  border-radius: 14px !important;
+  font-family: 'Syne', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  padding: 16px !important;
+  min-height: 56px !important;
+  margin-top: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  letter-spacing: -0.2px !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-calc-big:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28) !important;
+}
+
+.btn-calc-big:active {
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+}
+
+.btn-calc-big.btn-add {
+  background: linear-gradient(135deg, var(--green), var(--green-bright)) !important;
+  color: #06150c !important;
+}
+
+/* Botón añadir franja */
+.btn-add-range {
+  width: 100% !important;
+  background: var(--accent-bg) !important;
+  color: var(--accent) !important;
+  border: 1px dashed rgba(129, 140, 248, 0.4) !important;
+  border-radius: 12px !important;
+  padding: 13px 14px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  margin-top: 8px !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-add-range:hover {
+  background: rgba(129, 140, 248, 0.16) !important;
+  border-color: rgba(129, 140, 248, 0.65) !important;
+}
+
+/* Botón quitar franja */
+.trange-remove {
+  width: 100% !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  color: var(--red) !important;
+  border-radius: 10px !important;
+  padding: 9px 12px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  margin-top: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.trange-remove:hover {
+  background: rgba(239, 68, 68, 0.16) !important;
+}
+
+/* Botón X de Mi día */
+.myday-remove {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--muted) !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  border-radius: 10px !important;
+  min-height: 34px !important;
+  min-width: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.myday-remove:hover {
+  color: var(--red) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
     `}</style>
   );
 }
