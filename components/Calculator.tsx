@@ -2,9 +2,14 @@
 
 import { useState } from 'react';
 import {
-  appliances, cars, FAST_CHARGE_PRICE,
-  fmt, fmtMoney, h, hm,
-  color, getPriceAtHour, calculateCyclePrice,
+  appliances,
+  cars,
+  FAST_CHARGE_PRICE,
+  fmtMoney,
+  h,
+  hm,
+  color,
+  getPriceAtHour,
   PriceData
 } from '@/lib/utils';
 
@@ -70,15 +75,11 @@ function calculateVariableCost(
 }
 
 export default function Calculator({ prices, currentHour }: Props) {
-
-export default function Calculator({ prices, currentHour }: Props) {
   const minP = prices.reduce((a, b) => a.price < b.price ? a : b);
   const maxP = prices.reduce((a, b) => a.price > b.price ? a : b);
 
-  // Mobile: which calc is active
   const [activeCalc, setActiveCalc] = useState<ActiveCalc>('cycle');
 
-  // Cycle calculator
   const [cycleApp, setCycleApp] = useState('lavadora_basica');
   const [cycleMode, setCycleMode] = useState<'simple' | 'advanced'>('simple');
   const [cycleStartH, setCycleStartH] = useState(currentHour);
@@ -87,7 +88,6 @@ export default function Calculator({ prices, currentHour }: Props) {
   const [cycleKwh, setCycleKwh] = useState(0.9);
   const [cycleResult, setCycleResult] = useState<any>(null);
 
-  // Time calculator
   const [timeApp, setTimeApp] = useState('aire_inverter');
   const [timeKw, setTimeKw] = useState(1.0);
   const [timeRanges, setTimeRanges] = useState<TimeRange[]>([
@@ -95,7 +95,6 @@ export default function Calculator({ prices, currentHour }: Props) {
   ]);
   const [timeResult, setTimeResult] = useState<any>(null);
 
-  // EV
   const [evModel, setEvModel] = useState('tesla_3');
   const [evChargeMode, setEvChargeMode] = useState<'home' | 'fast'>('home');
   const [evFrom, setEvFrom] = useState(20);
@@ -105,7 +104,6 @@ export default function Calculator({ prices, currentHour }: Props) {
   const [evCustomPer100, setEvCustomPer100] = useState(16);
   const [evResult, setEvResult] = useState<any>(null);
 
-  // Mi Dia
   const [myDayApp, setMyDayApp] = useState('lavadora_basica');
   const [myDayHour, setMyDayHour] = useState(currentHour);
   const [myDayMin, setMyDayMin] = useState(0);
@@ -113,7 +111,6 @@ export default function Calculator({ prices, currentHour }: Props) {
   const [myDayItems, setMyDayItems] = useState<MyDayItem[]>([]);
   const [showOptimization, setShowOptimization] = useState(false);
 
-  // ============ CYCLE ============
   const handleCycleAppChange = (key: string) => {
     setCycleApp(key);
     const app = appliances[key];
@@ -125,19 +122,24 @@ export default function Calculator({ prices, currentHour }: Props) {
     const app = appliances[cycleApp];
     const startH = cycleStartH;
     const startM = cycleMode === 'simple' ? 0 : cycleStartM;
-    const cost = calculateCyclePrice(prices, startH, startM, cycleDuration, cycleKwh);
-    const costAtBest = calculateCyclePrice(prices, minP.hour, 0, cycleDuration, cycleKwh);
-    const costAtWorst = calculateCyclePrice(prices, maxP.hour, 0, cycleDuration, cycleKwh);
+
+    const cost = calculateVariableCost(prices, startH, startM, cycleDuration, cycleKwh);
+    const costAtBest = calculateVariableCost(prices, minP.hour, 0, cycleDuration, cycleKwh);
+    const costAtWorst = calculateVariableCost(prices, maxP.hour, 0, cycleDuration, cycleKwh);
 
     setCycleResult({
-      cost, costAtBest, costAtWorst,
-      app, startH, startM,
-      duration: cycleDuration, kwh: cycleKwh,
+      cost,
+      costAtBest,
+      costAtWorst,
+      app,
+      startH,
+      startM,
+      duration: cycleDuration,
+      kwh: cycleKwh,
       priceAtHour: getPriceAtHour(prices, startH)
     });
   };
 
-  // ============ TIME ============
   const handleTimeAppChange = (key: string) => {
     setTimeApp(key);
     setTimeKw(appliances[key].kw);
@@ -145,13 +147,17 @@ export default function Calculator({ prices, currentHour }: Props) {
 
   const addTimeRange = () => {
     const newId = Math.max(0, ...timeRanges.map(r => r.id)) + 1;
-    setTimeRanges([...timeRanges, {
-      id: newId,
-      startH: currentHour,
-      startM: 0,
-      endH: (currentHour + 1) % 24,
-      endM: 0
-    }]);
+
+    setTimeRanges([
+      ...timeRanges,
+      {
+        id: newId,
+        startH: currentHour,
+        startM: 0,
+        endH: (currentHour + 1) % 24,
+        endM: 0
+      }
+    ]);
   };
 
   const removeTimeRange = (id: number) => {
@@ -160,7 +166,7 @@ export default function Calculator({ prices, currentHour }: Props) {
   };
 
   const updateTimeRange = (id: number, field: keyof TimeRange, value: number) => {
-    setTimeRanges(timeRanges.map(r => r.id === id ? { ...r, [field]: value } : r));
+    setTimeRanges(timeRanges.map(r => (r.id === id ? { ...r, [field]: value } : r)));
   };
 
   const calcTime = () => {
@@ -172,13 +178,26 @@ export default function Calculator({ prices, currentHour }: Props) {
     timeRanges.forEach(r => {
       const startTotalMin = r.startH * 60 + r.startM;
       let endTotalMin = r.endH * 60 + r.endM;
-      if (endTotalMin <= startTotalMin) endTotalMin += 24 * 60;
+
+      if (endTotalMin <= startTotalMin) {
+        endTotalMin += 24 * 60;
+      }
+
       const durationMin = endTotalMin - startTotalMin;
       const durationH = durationMin / 60;
       const totalKwhRange = timeKw * durationH;
-      const rangeCost = calculateCyclePrice(prices, r.startH, r.startM, durationH, totalKwhRange);
+
+      const rangeCost = calculateVariableCost(
+        prices,
+        r.startH,
+        r.startM,
+        durationH,
+        totalKwhRange
+      );
+
       totalCost += rangeCost;
       totalMinutes += durationMin;
+
       rangeDetails.push({
         from: hm(r.startH, r.startM),
         to: hm(r.endH % 24, r.endM),
@@ -191,17 +210,20 @@ export default function Calculator({ prices, currentHour }: Props) {
     const totalKwh = timeKw * totalHours;
 
     setTimeResult({
-      totalCost, totalKwh, totalHours,
-      app, kw: timeKw,
+      totalCost,
+      totalKwh,
+      totalHours,
+      app,
+      kw: timeKw,
       rangeDetails,
       costAtBest: totalKwh * minP.price,
-      costAtWorst: totalKwh * maxP.price,
+      costAtWorst: totalKwh * maxP.price
     });
   };
 
-  // ============ EV ============
   const calcEv = () => {
     const isCustom = evModel === 'custom';
+
     const car = isCustom
       ? { label: 'Personalizado', per100: evCustomPer100, battery: evCustomKwh }
       : cars[evModel];
@@ -211,44 +233,60 @@ export default function Calculator({ prices, currentHour }: Props) {
       return;
     }
 
-    const kwhNeeded = car.battery * (evTo - evFrom) / 100;
+    const kwhNeeded = (car.battery * (evTo - evFrom)) / 100;
     const priceAtHour = getPriceAtHour(prices, evHour);
+
     const costHome = kwhNeeded * priceAtHour;
     const costFast = kwhNeeded * FAST_CHARGE_PRICE;
     const costUsed = evChargeMode === 'home' ? costHome : costFast;
     const kmRange = (kwhNeeded / car.per100) * 100;
 
     setEvResult({
-      car, isCustom, kwhNeeded, priceAtHour, costHome, costFast, costUsed, kmRange,
-      from: evFrom, to: evTo, hour: evHour, chargeMode: evChargeMode
+      car,
+      isCustom,
+      kwhNeeded,
+      priceAtHour,
+      costHome,
+      costFast,
+      costUsed,
+      kmRange,
+      from: evFrom,
+      to: evTo,
+      hour: evHour,
+      chargeMode: evChargeMode
     });
   };
 
-  // ============ MI DIA ============
   const addToMyDay = () => {
     const app = appliances[myDayApp];
-    let cost: number, kwh: number;
+
+    let cost: number;
+    let kwh: number;
 
     if (app.type === 'cycle') {
       kwh = app.kwh;
-      cost = calculateCyclePrice(prices, myDayHour, myDayMin, myDayDuration, kwh);
+      cost = calculateVariableCost(prices, myDayHour, myDayMin, myDayDuration, kwh);
     } else {
       kwh = app.kw * myDayDuration;
-      cost = calculateCyclePrice(prices, myDayHour, myDayMin, myDayDuration, kwh);
+      cost = calculateVariableCost(prices, myDayHour, myDayMin, myDayDuration, kwh);
     }
 
-    setMyDayItems([...myDayItems, {
-      id: Date.now(),
-      key: myDayApp,
-      label: app.label,
-      icon: app.icon,
-      startH: myDayHour,
-      startM: myDayMin,
-      duration: myDayDuration,
-      kwh,
-      cost,
-      type: app.type
-    }]);
+    setMyDayItems([
+      ...myDayItems,
+      {
+        id: Date.now(),
+        key: myDayApp,
+        label: app.label,
+        icon: app.icon,
+        startH: myDayHour,
+        startM: myDayMin,
+        duration: myDayDuration,
+        kwh,
+        cost,
+        type: app.type
+      }
+    ]);
+
     setShowOptimization(false);
   };
 
@@ -260,27 +298,34 @@ export default function Calculator({ prices, currentHour }: Props) {
   const optimizations = myDayItems.map(item => {
     let bestHour = 0;
     let bestCost = Infinity;
-    for (let h = 0; h < 24; h++) {
-      const c = calculateCyclePrice(prices, h, 0, item.duration, item.kwh);
-      if (c < bestCost) {
-        bestCost = c;
-        bestHour = h;
+
+    for (let hour = 0; hour < 24; hour++) {
+      const cost = calculateVariableCost(prices, hour, 0, item.duration, item.kwh);
+
+      if (cost < bestCost) {
+        bestCost = cost;
+        bestHour = hour;
       }
     }
-    return { ...item, bestHour, bestCost, savings: item.cost - bestCost };
+
+    return {
+      ...item,
+      bestHour,
+      bestCost,
+      savings: item.cost - bestCost
+    };
   });
 
-  const totalCostMyDay = myDayItems.reduce((s, i) => s + i.cost, 0);
-  const optimizedCost = optimizations.reduce((s, i) => s + i.bestCost, 0);
+  const totalCostMyDay = myDayItems.reduce((sum, item) => sum + item.cost, 0);
+  const optimizedCost = optimizations.reduce((sum, item) => sum + item.bestCost, 0);
   const totalSavings = totalCostMyDay - optimizedCost;
-  const totalKwh = myDayItems.reduce((s, i) => s + i.kwh, 0);
+  const totalKwh = myDayItems.reduce((sum, item) => sum + item.kwh, 0);
 
-  // ============ RENDER ============
   const calcTabs = [
     { id: 'cycle' as const, icon: '🧺', label: 'Lavadora' },
     { id: 'time' as const, icon: '❄️', label: 'Aire/TV' },
     { id: 'ev' as const, icon: '🔋', label: 'Coche EV' },
-    { id: 'myday' as const, icon: '📋', label: 'Mi día' },
+    { id: 'myday' as const, icon: '📋', label: 'Mi día' }
   ];
 
   return (
@@ -292,11 +337,11 @@ export default function Calculator({ prices, currentHour }: Props) {
         <div className="section-sub">Calcula cuánto te cuesta cada cosa según la hora</div>
       </div>
 
-      {/* MOBILE: Tab navigation - cards */}
       <div className="calc-nav">
         {calcTabs.map(tab => (
           <button
             key={tab.id}
+            type="button"
             className={`calc-nav-btn ${activeCalc === tab.id ? 'active' : ''}`}
             onClick={() => setActiveCalc(tab.id)}
           >
@@ -306,377 +351,640 @@ export default function Calculator({ prices, currentHour }: Props) {
         ))}
       </div>
 
-      {/* CYCLE CALCULATOR */}
-      <div className={`calc-section ${activeCalc === 'cycle' ? 'mobile-active' : ''}`}>
+      <div className={`calc-section ${activeCalc === 'cycle' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">🧺 Lavadora, secadora y lavavajillas</div>
 
-          {/* RESULT TOP (mobile-first: shows above) */}
           {cycleResult && (
             <div className="result-top">
               <div className="result-top-label">Te costará</div>
-              <div className="result-top-price" style={{ color: color(cycleResult.priceAtHour) }}>
+              <div
+                className="result-top-price"
+                style={{ color: color(cycleResult.priceAtHour) }}
+              >
                 {fmtMoney(cycleResult.cost)}
               </div>
+
               <div className="result-top-info">
-                {cycleResult.app.icon} {cycleResult.app.label} a las {hm(cycleResult.startH, cycleResult.startM)}
+                {cycleResult.app.icon} {cycleResult.app.label} a las{' '}
+                {hm(cycleResult.startH, cycleResult.startM)}
               </div>
+
               <div className="result-top-comparison">
                 <div className="result-mini">
                   <span className="result-mini-label">Mejor hora ({h(minP.hour)})</span>
-                  <span className="result-mini-value green">{fmtMoney(cycleResult.costAtBest)}</span>
+                  <span className="result-mini-value green">
+                    {fmtMoney(cycleResult.costAtBest)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Peor hora ({h(maxP.hour)})</span>
-                  <span className="result-mini-value red">{fmtMoney(cycleResult.costAtWorst)}</span>
+                  <span className="result-mini-value red">
+                    {fmtMoney(cycleResult.costAtWorst)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Diferencia</span>
-                  <span className="result-mini-value accent">{fmtMoney(cycleResult.costAtWorst - cycleResult.costAtBest)}</span>
+                  <span className="result-mini-value accent">
+                    {fmtMoney(cycleResult.costAtWorst - cycleResult.costAtBest)}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="big-field">
-            <label>Aparato</label>
-            <select value={cycleApp} onChange={e => handleCycleAppChange(e.target.value)}>
-              {Object.entries(appliances).filter(([_, v]) => v.type === 'cycle').map(([k, v]) => (
-                <option key={k} value={k}>{v.icon} {v.label} · {v.kwh} kWh</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="big-field">
-            <label>Modo de hora</label>
-            <div className="toggle-row big">
-              <button className={`toggle-opt ${cycleMode === 'simple' ? 'active' : ''}`} onClick={() => setCycleMode('simple')}>Solo horas</button>
-              <button className={`toggle-opt ${cycleMode === 'advanced' ? 'active' : ''}`} onClick={() => setCycleMode('advanced')}>Con minutos</button>
-            </div>
-          </div>
-
-          {cycleMode === 'simple' ? (
-            <div className="big-field">
-              <label>Hora de inicio</label>
-              <select value={cycleStartH} onChange={e => setCycleStartH(parseInt(e.target.value))}>
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>{h(i)}</option>
-                ))}
+          <div className="calculator-grid">
+            <div className="big-field field-wide">
+              <label>Aparato</label>
+              <select value={cycleApp} onChange={e => handleCycleAppChange(e.target.value)}>
+                {Object.entries(appliances)
+                  .filter(([_, value]) => value.type === 'cycle')
+                  .map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value.icon} {value.label} · {value.kwh} kWh
+                    </option>
+                  ))}
               </select>
             </div>
-          ) : (
-            <div className="row-2">
+
+            <div className="big-field">
+              <label>Modo de hora</label>
+              <div className="toggle-row big">
+                <button
+                  type="button"
+                  className={`toggle-opt ${cycleMode === 'simple' ? 'active' : ''}`}
+                  onClick={() => setCycleMode('simple')}
+                >
+                  Solo horas
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-opt ${cycleMode === 'advanced' ? 'active' : ''}`}
+                  onClick={() => setCycleMode('advanced')}
+                >
+                  Con minutos
+                </button>
+              </div>
+            </div>
+
+            {cycleMode === 'simple' ? (
               <div className="big-field">
-                <label>Hora</label>
+                <label>Hora de inicio</label>
                 <select value={cycleStartH} onChange={e => setCycleStartH(parseInt(e.target.value))}>
                   {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>{String(i).padStart(2, '0')}</option>
+                    <option key={i} value={i}>
+                      {h(i)}
+                    </option>
                   ))}
                 </select>
               </div>
-              <div className="big-field">
-                <label>Minutos</label>
-                <select value={cycleStartM} onChange={e => setCycleStartM(parseInt(e.target.value))}>
-                  {[0, 15, 30, 45].map(m => (
-                    <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
+            ) : (
+              <>
+                <div className="big-field">
+                  <label>Hora</label>
+                  <select value={cycleStartH} onChange={e => setCycleStartH(parseInt(e.target.value))}>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <div className="row-2">
+                <div className="big-field">
+                  <label>Minutos</label>
+                  <select value={cycleStartM} onChange={e => setCycleStartM(parseInt(e.target.value))}>
+                    {[0, 15, 30, 45].map(minute => (
+                      <option key={minute} value={minute}>
+                        {String(minute).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+
             <div className="big-field">
               <label>Duración (h)</label>
-              <input type="number" value={cycleDuration} onChange={e => setCycleDuration(parseFloat(e.target.value) || 0)} min="0.5" max="8" step="0.5" />
+              <input
+                type="number"
+                value={cycleDuration}
+                onChange={e => setCycleDuration(parseFloat(e.target.value) || 0)}
+                min="0.5"
+                max="8"
+                step="0.5"
+              />
             </div>
+
             <div className="big-field">
               <label>Consumo (kWh)</label>
-              <input type="number" value={cycleKwh} onChange={e => setCycleKwh(parseFloat(e.target.value) || 0)} min="0.1" max="5" step="0.1" />
+              <input
+                type="number"
+                value={cycleKwh}
+                onChange={e => setCycleKwh(parseFloat(e.target.value) || 0)}
+                min="0.1"
+                max="5"
+                step="0.1"
+              />
             </div>
           </div>
 
-          <button className="btn-calc-big" onClick={calcCycle}>Calcular ⚡</button>
+          <button type="button" className="btn-calc-big" onClick={calcCycle}>
+            Calcular ⚡
+          </button>
         </div>
       </div>
 
-      {/* TIME CALCULATOR */}
-      <div className={`calc-section ${activeCalc === 'time' ? 'mobile-active' : ''}`}>
+      <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
         <div className="card">
-          <div className="card-title">❄️ Aire, TV, calefacción (por horas)</div>
+          <div className="card-title">❄️ Aire, TV, calefacción por horas</div>
 
           {timeResult && (
             <div className="result-top">
               <div className="result-top-label">Te costará</div>
-              <div className="result-top-price" style={{ color: color(timeResult.totalCost / timeResult.totalKwh) }}>
+              <div
+                className="result-top-price"
+                style={{ color: color(timeResult.totalCost / timeResult.totalKwh) }}
+              >
                 {fmtMoney(timeResult.totalCost)}
               </div>
+
               <div className="result-top-info">
-                {timeResult.app.icon} {timeResult.app.label} · {timeResult.totalHours.toFixed(2)}h totales
+                {timeResult.app.icon} {timeResult.app.label} ·{' '}
+                {timeResult.totalHours.toFixed(2)}h totales
               </div>
-              <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--muted)' }}>
-                {timeResult.rangeDetails.map((r: any, i: number) => (
-                  <div key={i}>· {r.from} → {r.to} ({r.duration.toFixed(2)}h) = {fmtMoney(r.cost)}</div>
+
+              <div className="range-details">
+                {timeResult.rangeDetails.map((range: any, index: number) => (
+                  <div key={index}>
+                    · {range.from} → {range.to} ({range.duration.toFixed(2)}h) ={' '}
+                    {fmtMoney(range.cost)}
+                  </div>
                 ))}
               </div>
+
               <div className="result-top-comparison">
                 <div className="result-mini">
                   <span className="result-mini-label">Hora barata</span>
-                  <span className="result-mini-value green">{fmtMoney(timeResult.costAtBest)}</span>
+                  <span className="result-mini-value green">
+                    {fmtMoney(timeResult.costAtBest)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Hora cara</span>
-                  <span className="result-mini-value red">{fmtMoney(timeResult.costAtWorst)}</span>
+                  <span className="result-mini-value red">
+                    {fmtMoney(timeResult.costAtWorst)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Diferencia</span>
-                  <span className="result-mini-value accent">{fmtMoney(timeResult.costAtWorst - timeResult.costAtBest)}</span>
+                  <span className="result-mini-value accent">
+                    {fmtMoney(timeResult.costAtWorst - timeResult.costAtBest)}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="row-2">
+          <div className="calculator-grid">
             <div className="big-field">
               <label>Aparato</label>
               <select value={timeApp} onChange={e => handleTimeAppChange(e.target.value)}>
-                {Object.entries(appliances).filter(([_, v]) => v.type === 'time').map(([k, v]) => (
-                  <option key={k} value={k}>{v.icon} {v.label} · {v.kw} kW</option>
-                ))}
+                {Object.entries(appliances)
+                  .filter(([_, value]) => value.type === 'time')
+                  .map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value.icon} {value.label} · {value.kw} kW
+                    </option>
+                  ))}
               </select>
             </div>
+
             <div className="big-field">
               <label>Potencia (kW)</label>
-              <input type="number" value={timeKw} onChange={e => setTimeKw(parseFloat(e.target.value) || 0)} min="0.05" max="10" step="0.05" />
+              <input
+                type="number"
+                value={timeKw}
+                onChange={e => setTimeKw(parseFloat(e.target.value) || 0)}
+                min="0.05"
+                max="10"
+                step="0.05"
+              />
             </div>
           </div>
 
           <div className="big-field">
             <label>Franjas de uso</label>
+
             {timeRanges.map(range => (
               <div key={range.id} className="time-range-card">
                 <div className="trange-row">
                   <span className="trange-label">Desde</span>
-                  <select value={range.startH} onChange={e => updateTimeRange(range.id, 'startH', parseInt(e.target.value))}>
-                    {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, '0')}</option>)}
+
+                  <select
+                    value={range.startH}
+                    onChange={e => updateTimeRange(range.id, 'startH', parseInt(e.target.value))}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
                   </select>
-                  <span style={{ color: 'var(--muted)' }}>:</span>
-                  <select value={range.startM} onChange={e => updateTimeRange(range.id, 'startM', parseInt(e.target.value))}>
-                    {[0, 15, 30, 45].map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
+
+                  <span className="trange-separator">:</span>
+
+                  <select
+                    value={range.startM}
+                    onChange={e => updateTimeRange(range.id, 'startM', parseInt(e.target.value))}
+                  >
+                    {[0, 15, 30, 45].map(minute => (
+                      <option key={minute} value={minute}>
+                        {String(minute).padStart(2, '0')}
+                      </option>
+                    ))}
                   </select>
                 </div>
+
                 <div className="trange-row">
                   <span className="trange-label">Hasta</span>
-                  <select value={range.endH} onChange={e => updateTimeRange(range.id, 'endH', parseInt(e.target.value))}>
-                    {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, '0')}</option>)}
+
+                  <select
+                    value={range.endH}
+                    onChange={e => updateTimeRange(range.id, 'endH', parseInt(e.target.value))}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {String(i).padStart(2, '0')}
+                      </option>
+                    ))}
                   </select>
-                  <span style={{ color: 'var(--muted)' }}>:</span>
-                  <select value={range.endM} onChange={e => updateTimeRange(range.id, 'endM', parseInt(e.target.value))}>
-                    {[0, 15, 30, 45].map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
+
+                  <span className="trange-separator">:</span>
+
+                  <select
+                    value={range.endM}
+                    onChange={e => updateTimeRange(range.id, 'endM', parseInt(e.target.value))}
+                  >
+                    {[0, 15, 30, 45].map(minute => (
+                      <option key={minute} value={minute}>
+                        {String(minute).padStart(2, '0')}
+                      </option>
+                    ))}
                   </select>
                 </div>
+
                 {timeRanges.length > 1 && (
-                  <button className="trange-remove" onClick={() => removeTimeRange(range.id)}>✕ Quitar</button>
+                  <button
+                    type="button"
+                    className="trange-remove"
+                    onClick={() => removeTimeRange(range.id)}
+                  >
+                    Quitar
+                  </button>
                 )}
               </div>
             ))}
-            <button className="btn-add-range" onClick={addTimeRange}>+ Añadir otra franja</button>
+
+            <button type="button" className="btn-add-range" onClick={addTimeRange}>
+              + Añadir otra franja
+            </button>
           </div>
 
-          <button className="btn-calc-big" onClick={calcTime}>Calcular ⚡</button>
+          <button type="button" className="btn-calc-big" onClick={calcTime}>
+            Calcular ⚡
+          </button>
         </div>
       </div>
 
-      {/* EV */}
-      <div className={`calc-section ${activeCalc === 'ev' ? 'mobile-active' : ''}`}>
+      <div className={`calc-section ${activeCalc === 'ev' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">🔋 Coche eléctrico</div>
 
           {evResult && (
             <div className="result-top">
               <div className="result-top-label">Cargar costará</div>
-              <div className="result-top-price" style={{ color: color(evResult.priceAtHour) }}>
+              <div
+                className="result-top-price"
+                style={{ color: color(evResult.priceAtHour) }}
+              >
                 {fmtMoney(evResult.costUsed)}
               </div>
+
               <div className="result-top-info">
-                {evResult.isCustom ? '🔧' : '🔋'} {evResult.car.label} · {evResult.from}% → {evResult.to}% ({evResult.kwhNeeded.toFixed(1)} kWh = {evResult.kmRange.toFixed(0)} km)
+                {evResult.isCustom ? '🔧' : '🔋'} {evResult.car.label} · {evResult.from}% →{' '}
+                {evResult.to}% ({evResult.kwhNeeded.toFixed(1)} kWh ={' '}
+                {evResult.kmRange.toFixed(0)} km)
               </div>
+
               <div className="result-top-comparison">
                 <div className="result-mini">
                   <span className="result-mini-label">Casa a las {h(evResult.hour)}</span>
-                  <span className="result-mini-value green">{fmtMoney(evResult.costHome)}</span>
+                  <span className="result-mini-value green">
+                    {fmtMoney(evResult.costHome)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Carga rápida</span>
-                  <span className="result-mini-value red">{fmtMoney(evResult.costFast)}</span>
+                  <span className="result-mini-value red">
+                    {fmtMoney(evResult.costFast)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Diferencia</span>
-                  <span className="result-mini-value accent">{fmtMoney(evResult.costFast - evResult.costHome)}</span>
+                  <span className="result-mini-value accent">
+                    {fmtMoney(evResult.costFast - evResult.costHome)}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="big-field">
-            <label>Modelo</label>
-            <select value={evModel} onChange={e => setEvModel(e.target.value)}>
-              {Object.entries(cars).map(([k, v]) => (
-                <option key={k} value={k}>{v.label} · {v.battery} kWh</option>
-              ))}
-            </select>
+          <div className="calculator-grid ev-grid">
+            <div className="big-field">
+              <label>Modelo</label>
+              <select value={evModel} onChange={e => setEvModel(e.target.value)}>
+                {Object.entries(cars).map(([key, value]) => (
+                  <option key={key} value={key}>
+                    {value.label} · {value.battery} kWh
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="big-field">
+              <label>Tipo de carga</label>
+              <div className="toggle-row big">
+                <button
+                  type="button"
+                  className={`toggle-opt ${evChargeMode === 'home' ? 'active' : ''}`}
+                  onClick={() => setEvChargeMode('home')}
+                >
+                  🏠 Casa
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-opt ${evChargeMode === 'fast' ? 'active' : ''}`}
+                  onClick={() => setEvChargeMode('fast')}
+                >
+                  ⚡ Rápida
+                </button>
+              </div>
+            </div>
+
+            <div className="big-field">
+              <label>Carga desde</label>
+              <input
+                type="number"
+                value={evFrom}
+                onChange={e => setEvFrom(parseInt(e.target.value) || 0)}
+                min="0"
+                max="100"
+              />
+            </div>
+
+            <div className="big-field">
+              <label>Hasta</label>
+              <input
+                type="number"
+                value={evTo}
+                onChange={e => setEvTo(parseInt(e.target.value) || 0)}
+                min="0"
+                max="100"
+              />
+            </div>
+
+            <div className="big-field">
+              <label>Hora de carga</label>
+              <select value={evHour} onChange={e => setEvHour(parseInt(e.target.value))}>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {h(i)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {evModel === 'custom' && (
             <div className="custom-block">
-              <div className="custom-block-title">🔧 Datos personalizados</div>
-              <div className="row-2">
+              <div className="custom-block-title">Datos personalizados</div>
+
+              <div className="calculator-grid">
                 <div className="big-field">
                   <label>Batería (kWh)</label>
-                  <input type="number" value={evCustomKwh} onChange={e => setEvCustomKwh(parseFloat(e.target.value) || 0)} min="10" max="200" step="1" />
+                  <input
+                    type="number"
+                    value={evCustomKwh}
+                    onChange={e => setEvCustomKwh(parseFloat(e.target.value) || 0)}
+                    min="10"
+                    max="200"
+                    step="1"
+                  />
                 </div>
+
                 <div className="big-field">
-                  <label>kWh / 100km</label>
-                  <input type="number" value={evCustomPer100} onChange={e => setEvCustomPer100(parseFloat(e.target.value) || 0)} min="8" max="30" step="0.5" />
+                  <label>kWh / 100 km</label>
+                  <input
+                    type="number"
+                    value={evCustomPer100}
+                    onChange={e => setEvCustomPer100(parseFloat(e.target.value) || 0)}
+                    min="8"
+                    max="30"
+                    step="0.5"
+                  />
                 </div>
               </div>
             </div>
           )}
 
-          <div className="big-field">
-            <label>Tipo de carga</label>
-            <div className="toggle-row big">
-              <button className={`toggle-opt ${evChargeMode === 'home' ? 'active' : ''}`} onClick={() => setEvChargeMode('home')}>🏠 En casa</button>
-              <button className={`toggle-opt ${evChargeMode === 'fast' ? 'active' : ''}`} onClick={() => setEvChargeMode('fast')}>⚡ Rápida</button>
-            </div>
-          </div>
-
-          <div className="row-2">
-            <div className="big-field">
-              <label>Desde (%)</label>
-              <input type="number" value={evFrom} onChange={e => setEvFrom(parseInt(e.target.value) || 0)} min="0" max="100" />
-            </div>
-            <div className="big-field">
-              <label>Hasta (%)</label>
-              <input type="number" value={evTo} onChange={e => setEvTo(parseInt(e.target.value) || 0)} min="0" max="100" />
-            </div>
-          </div>
-
-          <div className="big-field">
-            <label>Hora de carga</label>
-            <select value={evHour} onChange={e => setEvHour(parseInt(e.target.value))}>
-              {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{h(i)}</option>)}
-            </select>
-          </div>
-
-          <button className="btn-calc-big" onClick={calcEv}>Calcular ⚡</button>
+          <button type="button" className="btn-calc-big" onClick={calcEv}>
+            Calcular carga →
+          </button>
         </div>
       </div>
 
-      {/* MI DIA */}
-      <div className={`calc-section ${activeCalc === 'myday' ? 'mobile-active' : ''}`}>
+      <div className={`calc-section ${activeCalc === 'myday' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">📋 Mi día completo</div>
 
           {myDayItems.length > 0 && (
             <div className="result-top">
               <div className="result-top-label">Total del día</div>
-              <div className="result-top-price" style={{ color: color(totalCostMyDay / totalKwh) }}>
+              <div
+                className="result-top-price"
+                style={{ color: color(totalCostMyDay / totalKwh) }}
+              >
                 {fmtMoney(totalCostMyDay)}
               </div>
-              <div className="result-top-info">{totalKwh.toFixed(2)} kWh · {myDayItems.length} usos</div>
+
+              <div className="result-top-info">
+                {totalKwh.toFixed(2)} kWh · {myDayItems.length} usos
+              </div>
+
               <div className="result-top-comparison">
                 <div className="result-mini">
                   <span className="result-mini-label">Si optimizas</span>
-                  <span className="result-mini-value green">{fmtMoney(optimizedCost)}</span>
+                  <span className="result-mini-value green">
+                    {fmtMoney(optimizedCost)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">Ahorro posible</span>
-                  <span className="result-mini-value accent">{fmtMoney(totalSavings)}</span>
+                  <span className="result-mini-value accent">
+                    {fmtMoney(totalSavings)}
+                  </span>
                 </div>
+
                 <div className="result-mini">
                   <span className="result-mini-label">% mejora</span>
-                  <span className="result-mini-value green">{Math.round((totalSavings / totalCostMyDay) * 100)}%</span>
+                  <span className="result-mini-value green">
+                    {Math.round((totalSavings / totalCostMyDay) * 100)}%
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
           <div className="myday-add">
-            <div className="big-field">
-              <label>Aparato</label>
-              <select value={myDayApp} onChange={e => setMyDayApp(e.target.value)}>
-                <optgroup label="Ciclos">
-                  {Object.entries(appliances).filter(([_, v]) => v.type === 'cycle').map(([k, v]) => (
-                    <option key={k} value={k}>{v.icon} {v.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Por horas">
-                  {Object.entries(appliances).filter(([_, v]) => v.type === 'time').map(([k, v]) => (
-                    <option key={k} value={k}>{v.icon} {v.label}</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
+            <div className="calculator-grid">
+              <div className="big-field">
+                <label>Aparato</label>
+                <select value={myDayApp} onChange={e => setMyDayApp(e.target.value)}>
+                  <optgroup label="Ciclos">
+                    {Object.entries(appliances)
+                      .filter(([_, value]) => value.type === 'cycle')
+                      .map(([key, value]) => (
+                        <option key={key} value={key}>
+                          {value.icon} {value.label}
+                        </option>
+                      ))}
+                  </optgroup>
 
-            <div className="row-2">
+                  <optgroup label="Por horas">
+                    {Object.entries(appliances)
+                      .filter(([_, value]) => value.type === 'time')
+                      .map(([key, value]) => (
+                        <option key={key} value={key}>
+                          {value.icon} {value.label}
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+              </div>
+
               <div className="big-field">
                 <label>Hora</label>
                 <select value={myDayHour} onChange={e => setMyDayHour(parseInt(e.target.value))}>
-                  {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, '0')}</option>)}
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {String(i).padStart(2, '0')}
+                    </option>
+                  ))}
                 </select>
               </div>
+
               <div className="big-field">
                 <label>Minutos</label>
                 <select value={myDayMin} onChange={e => setMyDayMin(parseInt(e.target.value))}>
-                  {[0, 15, 30, 45].map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
+                  {[0, 15, 30, 45].map(minute => (
+                    <option key={minute} value={minute}>
+                      {String(minute).padStart(2, '0')}
+                    </option>
+                  ))}
                 </select>
+              </div>
+
+              <div className="big-field">
+                <label>Duración (h)</label>
+                <input
+                  type="number"
+                  value={myDayDuration}
+                  onChange={e => setMyDayDuration(parseFloat(e.target.value) || 0)}
+                  min="0.25"
+                  max="24"
+                  step="0.25"
+                />
               </div>
             </div>
 
-            <div className="big-field">
-              <label>Duración (h)</label>
-              <input type="number" value={myDayDuration} onChange={e => setMyDayDuration(parseFloat(e.target.value) || 0)} min="0.25" max="24" step="0.25" />
-            </div>
-
-            <button className="btn-calc-big btn-add" onClick={addToMyDay}>+ Añadir a mi día</button>
+            <button type="button" className="btn-calc-big btn-add" onClick={addToMyDay}>
+              + Añadir a mi día
+            </button>
           </div>
 
           {myDayItems.length === 0 ? (
-            <div className="myday-empty">📋 Tu día está vacío. Añade aparatos arriba.</div>
+            <div className="myday-empty">Tu día está vacío. Añade aparatos arriba.</div>
           ) : (
             <>
               <div className="myday-list">
                 {myDayItems.map(item => (
                   <div key={item.id} className="myday-item">
-                    <div style={{ fontSize: '24px' }}>{item.icon}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '14px' }}>{item.label}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                        {hm(item.startH, item.startM)} · {item.duration}h · {item.kwh.toFixed(2)} kWh
+                    <div className="myday-icon">{item.icon}</div>
+
+                    <div className="myday-content">
+                      <div className="myday-name">{item.label}</div>
+                      <div className="myday-meta">
+                        {hm(item.startH, item.startM)} · {item.duration}h ·{' '}
+                        {item.kwh.toFixed(2)} kWh
                       </div>
                     </div>
-                    <div style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '16px', color: color(item.cost / item.kwh) }}>
+
+                    <div
+                      className="myday-price"
+                      style={{ color: color(item.cost / item.kwh) }}
+                    >
                       {fmtMoney(item.cost)}
                     </div>
-                    <button className="myday-remove" onClick={() => removeMyDayItem(item.id)}>✕</button>
+
+                    <button
+                      type="button"
+                      className="myday-remove"
+                      onClick={() => removeMyDayItem(item.id)}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
 
-              <button className="btn-calc-big" onClick={() => setShowOptimization(!showOptimization)} style={{ marginTop: '12px' }}>
-                {showOptimization ? '⬆️ Ocultar' : '⚡ Optimizar mi día'}
+              <button
+                type="button"
+                className="btn-calc-big"
+                onClick={() => setShowOptimization(!showOptimization)}
+              >
+                {showOptimization ? 'Ocultar optimización' : 'Optimizar mi día'}
               </button>
 
               {showOptimization && (
                 <div className="myday-tips">
-                  <div className="myday-tips-title">💡 Recomendaciones</div>
-                  {optimizations.map(r => (
-                    <div key={r.id} className="myday-tip">
-                      {r.savings < 0.01 ? (
-                        <span style={{ color: 'var(--text-soft)' }}>{r.icon} <strong>{r.label}</strong> — Ya está bien</span>
+                  <div className="myday-tips-title">Recomendaciones</div>
+
+                  {optimizations.map(result => (
+                    <div key={result.id} className="myday-tip">
+                      {result.savings < 0.01 ? (
+                        <span>
+                          {result.icon} <strong>{result.label}</strong> ya está bien colocado.
+                        </span>
                       ) : (
-                        <span>{r.icon} <strong>{r.label}</strong>: mueve de {hm(r.startH, r.startM)} → <strong style={{ color: 'var(--green-bright)' }}>{h(r.bestHour)}</strong> · ahorras <strong style={{ color: 'var(--green-bright)' }}>{fmtMoney(r.savings)}</strong></span>
+                        <span>
+                          {result.icon} <strong>{result.label}</strong>: mueve de{' '}
+                          {hm(result.startH, result.startM)} a{' '}
+                          <strong style={{ color: 'var(--green-bright)' }}>
+                            {h(result.bestHour)}
+                          </strong>{' '}
+                          y ahorras{' '}
+                          <strong style={{ color: 'var(--green-bright)' }}>
+                            {fmtMoney(result.savings)}
+                          </strong>
+                        </span>
                       )}
                     </div>
                   ))}
@@ -693,17 +1001,30 @@ export default function Calculator({ prices, currentHour }: Props) {
 function CalculatorStyles() {
   return (
     <style jsx global>{`
-      .section-header { margin: 32px 0 16px; padding: 0 4px; }
-      .section-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 6px; }
-      .section-sub { font-size: 14px; color: var(--text-soft); }
+      .section-header {
+        margin: 32px 0 16px;
+        padding: 0 4px;
+      }
 
-      /* MOBILE TAB NAVIGATION */
+      .section-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+
+      .section-sub {
+        font-size: 14px;
+        color: var(--text-soft);
+      }
+
       .calc-nav {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         margin-bottom: 16px;
       }
+
       .calc-nav-btn {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -712,35 +1033,56 @@ function CalculatorStyles() {
         cursor: pointer;
         font-family: inherit;
         text-align: center;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         color: var(--text-soft);
       }
-      .calc-nav-btn:hover { border-color: var(--accent); }
+
+      .calc-nav-btn:hover {
+        border-color: var(--accent);
+        transform: translateY(-1px);
+      }
+
       .calc-nav-btn.active {
         background: var(--accent-bg);
         border-color: var(--accent);
         color: var(--text);
       }
-      .calc-nav-icon { font-size: 24px; margin-bottom: 4px; }
-      .calc-nav-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-      /* CALC SECTIONS */
-      .calc-section { display: block; margin-bottom: 16px; }
+      .calc-nav-icon {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
 
-      /* Cards */
+      .calc-nav-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .calc-section {
+        display: none;
+        margin-bottom: 16px;
+      }
+
+      .calc-section.active {
+        display: block;
+      }
+
       .card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 18px;
         padding: 24px;
       }
+
       .card-title {
         font-family: 'Syne', sans-serif;
-        font-size: 16px; font-weight: 700;
+        font-size: 16px;
+        font-weight: 700;
         margin-bottom: 18px;
       }
 
-      /* RESULT TOP */
       .result-top {
         background: linear-gradient(135deg, var(--surface2), var(--surface));
         border: 1px solid var(--border);
@@ -749,6 +1091,7 @@ function CalculatorStyles() {
         margin-bottom: 22px;
         animation: up 0.3s ease both;
       }
+
       .result-top-label {
         font-size: 11px;
         text-transform: uppercase;
@@ -756,17 +1099,20 @@ function CalculatorStyles() {
         color: var(--text-soft);
         margin-bottom: 6px;
       }
+
       .result-top-price {
-        font-family: 'Syne', sans-serif;
-        font-size: 48px;
+        font-family: 'Inter', sans-serif;
+        font-size: clamp(40px, 6vw, 58px);
         font-weight: 800;
         line-height: 1;
         margin-bottom: 8px;
       }
+
       .result-top-info {
         font-size: 14px;
         color: var(--text);
       }
+
       .result-top-comparison {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -775,30 +1121,63 @@ function CalculatorStyles() {
         padding-top: 14px;
         border-top: 1px solid var(--border);
       }
+
       .result-mini {
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
+
       .result-mini-label {
         font-size: 10px;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
-      .result-mini-value {
-        font-family: 'Syne', sans-serif;
-        font-size: 14px;
-        font-weight: 700;
-      }
-      .result-mini-value.green { color: var(--green-bright); }
-      .result-mini-value.red { color: var(--red); }
-      .result-mini-value.accent { color: var(--accent); }
 
-      /* BIG FIELDS (mobile-friendly) */
+      .result-mini-value {
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .result-mini-value.green {
+        color: var(--green-bright);
+      }
+
+      .result-mini-value.red {
+        color: var(--red);
+      }
+
+      .result-mini-value.accent {
+        color: var(--accent);
+      }
+
+      .range-details {
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .calculator-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .calculator-grid.ev-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .field-wide {
+        grid-column: span 2;
+      }
+
       .big-field {
         margin-bottom: 14px;
       }
+
       .big-field label {
         display: block;
         font-size: 12px;
@@ -806,8 +1185,9 @@ function CalculatorStyles() {
         margin-bottom: 6px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-weight: 500;
+        font-weight: 600;
       }
+
       .big-field select,
       .big-field input {
         width: 100%;
@@ -820,13 +1200,15 @@ function CalculatorStyles() {
         padding: 14px 16px;
         outline: none;
         appearance: none;
-        transition: border-color 0.15s;
+        transition: border-color 0.15s ease;
         min-height: 50px;
       }
+
       .big-field select:focus,
       .big-field input:focus {
         border-color: var(--accent);
       }
+
       .big-field select {
         background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a8aabc' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
@@ -834,32 +1216,34 @@ function CalculatorStyles() {
         padding-right: 40px;
       }
 
-      .row-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
+      .toggle-row {
+        display: flex;
+        gap: 6px;
+        background: var(--surface2);
+        padding: 6px;
+        border-radius: 12px;
       }
 
-      /* TOGGLE BIG */
-      .toggle-row { display: flex; gap: 6px; background: var(--surface2); padding: 5px; border-radius: 12px; }
-      .toggle-row.big { padding: 6px; }
       .toggle-opt {
         flex: 1;
         padding: 12px;
         border-radius: 8px;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-soft);
         cursor: pointer;
         border: none;
         background: transparent;
         font-family: inherit;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         min-height: 44px;
       }
-      .toggle-opt.active { background: var(--surface3); color: var(--text); }
 
-      /* BIG BUTTONS */
+      .toggle-opt.active {
+        background: var(--surface3);
+        color: var(--text);
+      }
+
       .btn-calc-big {
         width: 100%;
         background: var(--accent-soft);
@@ -871,13 +1255,20 @@ function CalculatorStyles() {
         font-size: 17px;
         padding: 16px;
         cursor: pointer;
-        transition: opacity 0.2s;
+        transition: all 0.2s ease;
         min-height: 56px;
+        margin-top: 8px;
       }
-      .btn-calc-big:hover { opacity: 0.9; }
-      .btn-calc-big.btn-add { background: var(--green); }
 
-      /* TIME RANGE CARDS */
+      .btn-calc-big:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+
+      .btn-calc-big.btn-add {
+        background: var(--green);
+      }
+
       .time-range-card {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -885,20 +1276,26 @@ function CalculatorStyles() {
         padding: 14px;
         margin-bottom: 8px;
       }
+
       .trange-row {
         display: flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 8px;
       }
-      .trange-row:last-of-type { margin-bottom: 0; }
+
+      .trange-row:last-of-type {
+        margin-bottom: 0;
+      }
+
       .trange-label {
         font-size: 12px;
         color: var(--text-soft);
-        font-weight: 600;
+        font-weight: 700;
         min-width: 50px;
         text-transform: uppercase;
       }
+
       .trange-row select {
         flex: 1;
         background: var(--surface3);
@@ -911,56 +1308,62 @@ function CalculatorStyles() {
         appearance: none;
         min-height: 42px;
       }
+
+      .trange-separator {
+        color: var(--muted);
+      }
+
       .trange-remove {
-        background: rgba(239,68,68,0.1);
-        border: 1px solid rgba(239,68,68,0.2);
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
         color: var(--red);
         border-radius: 8px;
         padding: 8px 12px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         margin-top: 8px;
         width: 100%;
       }
+
       .btn-add-range {
         background: var(--accent-bg);
         color: var(--accent);
-        border: 1px dashed rgba(129,140,248,0.3);
+        border: 1px dashed rgba(129, 140, 248, 0.3);
         border-radius: 12px;
         padding: 12px;
         width: 100%;
         cursor: pointer;
         font-family: inherit;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 8px;
         min-height: 48px;
       }
 
-      /* CUSTOM BLOCK */
       .custom-block {
         background: var(--accent-bg);
-        border: 1px solid rgba(129,140,248,0.2);
+        border: 1px solid rgba(129, 140, 248, 0.2);
         border-radius: 12px;
         padding: 14px;
         margin-bottom: 14px;
       }
+
       .custom-block-title {
         font-size: 12px;
         color: var(--accent);
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-weight: 700;
+        font-weight: 800;
         margin-bottom: 12px;
       }
 
-      /* MY DAY */
       .myday-add {
         padding-bottom: 18px;
         margin-bottom: 18px;
         border-bottom: 1px solid var(--border);
       }
+
       .myday-empty {
         text-align: center;
         color: var(--muted);
@@ -969,11 +1372,14 @@ function CalculatorStyles() {
         background: var(--surface2);
         border-radius: 12px;
       }
+
       .myday-list {
         background: var(--surface2);
         border-radius: 12px;
         overflow: hidden;
+        margin-bottom: 12px;
       }
+
       .myday-item {
         display: flex;
         align-items: center;
@@ -981,67 +1387,111 @@ function CalculatorStyles() {
         padding: 14px;
         border-bottom: 1px solid var(--border-soft);
       }
-      .myday-item:last-child { border-bottom: none; }
+
+      .myday-item:last-child {
+        border-bottom: none;
+      }
+
+      .myday-icon {
+        font-size: 24px;
+      }
+
+      .myday-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .myday-name {
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .myday-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .myday-price {
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        font-size: 16px;
+      }
+
       .myday-remove {
         background: transparent;
         border: none;
         color: var(--muted);
         cursor: pointer;
-        font-size: 18px;
+        font-size: 20px;
         padding: 4px 8px;
         min-height: 32px;
         min-width: 32px;
       }
-      .myday-remove:hover { color: var(--red); }
+
+      .myday-remove:hover {
+        color: var(--red);
+      }
 
       .myday-tips {
         margin-top: 12px;
         background: var(--green-bg);
-        border: 1px solid rgba(34,197,94,0.2);
+        border: 1px solid rgba(34, 197, 94, 0.2);
         border-radius: 12px;
         padding: 14px;
       }
+
       .myday-tips-title {
         font-size: 12px;
         color: var(--green-bright);
-        font-weight: 700;
+        font-weight: 800;
         margin-bottom: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
+
       .myday-tip {
         font-size: 13px;
         padding: 6px 0;
         line-height: 1.5;
       }
 
-      /* ============ MOBILE FIRST ============ */
       @media (max-width: 767px) {
-        .calc-section { display: none; }
-        .calc-section.mobile-active { display: block; }
-        
-        .card { padding: 18px; border-radius: 16px; }
-        
-        .calc-nav-btn { padding: 12px 6px; }
-        .calc-nav-icon { font-size: 22px; }
-        .calc-nav-label { font-size: 10px; }
-        
-        .result-top-price { font-size: 40px; }
+        .calc-nav {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+          padding: 18px;
+          border-radius: 16px;
+        }
+
+        .calculator-grid,
+        .calculator-grid.ev-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .field-wide {
+          grid-column: span 1;
+        }
+
+        .result-top-price {
+          font-size: 42px;
+        }
+
         .result-top-comparison {
           grid-template-columns: 1fr;
           gap: 10px;
         }
+
         .result-mini {
           flex-direction: row;
           justify-content: space-between;
           align-items: center;
         }
-      }
 
-      /* ============ DESKTOP ============ */
-      @media (min-width: 768px) {
-        .calc-nav { display: none; }
-        .calc-section { display: block; }
+        .trange-row {
+          flex-wrap: wrap;
+        }
       }
     `}</style>
   );
