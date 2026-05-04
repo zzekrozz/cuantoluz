@@ -8,24 +8,61 @@ import {
 } from '@/lib/utils';
 import Calculator from '@/components/Calculator';
 
+type SelectedDay = 'today' | 'tomorrow';
+
+interface ApiResponse {
+  success?: boolean;
+  day?: string;
+  date?: string;
+  prices?: PriceData[];
+  error?: string;
+}
+
 export default function Home() {
-  const [prices, setPrices] = useState<PriceData[]>([]);
+  const [todayPrices, setTodayPrices] = useState<PriceData[]>([]);
+  const [tomorrowPrices, setTomorrowPrices] = useState<PriceData[]>([]);
+  const [todayDate, setTodayDate] = useState('');
+  const [tomorrowDate, setTomorrowDate] = useState('');
+  const [selectedDay, setSelectedDay] = useState<SelectedDay>('today');
   const [loading, setLoading] = useState(true);
   const [currentHour, setCurrentHour] = useState(0);
+  const [tomorrowAvailable, setTomorrowAvailable] = useState(false);
 
   useEffect(() => {
     const now = new Date();
     setCurrentHour(now.getHours());
 
-    fetch('/api/precios')
-      .then(r => r.json())
-      .then(data => {
-        if (data.prices) {
-          setPrices(data.prices);
+    async function loadPrices() {
+      try {
+        const [todayRes, tomorrowRes] = await Promise.all([
+          fetch('/api/precios?day=today'),
+          fetch('/api/precios?day=tomorrow')
+        ]);
+
+        const todayData: ApiResponse = await todayRes.json();
+        const tomorrowData: ApiResponse = await tomorrowRes.json();
+
+        if (todayData.prices?.length) {
+          setTodayPrices(todayData.prices);
+          setTodayDate(todayData.date || '');
         }
+
+        if (tomorrowData.success && tomorrowData.prices?.length) {
+          setTomorrowPrices(tomorrowData.prices);
+          setTomorrowDate(tomorrowData.date || '');
+          setTomorrowAvailable(true);
+        } else {
+          setTomorrowPrices([]);
+          setTomorrowAvailable(false);
+        }
+      } catch {
+        setTomorrowAvailable(false);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    }
+
+    loadPrices();
   }, []);
 
   if (loading) {
@@ -37,27 +74,61 @@ export default function Home() {
           borderRadius: '50%', animation: 'spin 0.7s linear infinite'
         }} />
         <div style={{ color: 'var(--text-soft)', fontSize: '14px' }}>
-          Cargando precios de hoy...
+          Cargando precios...
         </div>
       </div>
     );
   }
 
-  if (!prices.length) return <div>Error cargando datos</div>;
+  if (!todayPrices.length) return <div>Error cargando datos</div>;
 
-  return <HomeContent prices={prices} currentHour={currentHour} />;
+  const pricesToShow = selectedDay === 'today' ? todayPrices : tomorrowPrices;
+  const dateToShow = selectedDay === 'today' ? todayDate : tomorrowDate;
+
+  return (
+    <HomeContent
+      prices={pricesToShow.length ? pricesToShow : todayPrices}
+      currentHour={currentHour}
+      selectedDay={selectedDay}
+      setSelectedDay={setSelectedDay}
+      todayDate={todayDate}
+      tomorrowDate={tomorrowDate}
+      tomorrowAvailable={tomorrowAvailable}
+    />
+  );
 }
 
-function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour: number }) {
-  const cur = prices.find(p => p.hour === currentHour) || prices[0];
+function HomeContent({
+  prices,
+  currentHour,
+  selectedDay,
+  setSelectedDay,
+  todayDate,
+  tomorrowDate,
+  tomorrowAvailable
+}: {
+  prices: PriceData[];
+  currentHour: number;
+  selectedDay: SelectedDay;
+  setSelectedDay: (day: SelectedDay) => void;
+  todayDate: string;
+  tomorrowDate: string;
+  tomorrowAvailable: boolean;
+}) {
+  const isToday = selectedDay === 'today';
+  const cur = isToday ? prices.find(p => p.hour === currentHour) || prices[0] : prices[0];
   const minP = prices.reduce((a, b) => a.price < b.price ? a : b);
   const maxP = prices.reduce((a, b) => a.price > b.price ? a : b);
   const avg = prices.reduce((s, p) => s + p.price, 0) / prices.length;
   const sc = semClass(cur.price);
-  const savingPct = Math.round((1 - minP.price / cur.price) * 100);
+  const savingPct = isToday && cur.price > 0 ? Math.round((1 - minP.price / cur.price) * 100) : 0;
 
   let urgentMsg = '', urgentCls = '';
-  if (sc === 'green') {
+
+  if (!isToday) {
+    urgentMsg = '📅 Estás viendo los precios de mañana. Hoy sigue disponible en el botón de arriba.';
+    urgentCls = 'normal';
+  } else if (sc === 'green') {
     urgentMsg = '✅ Buen momento para consumir. Pon la lavadora si quieres.';
     urgentCls = 'cheap';
   } else if (sc === 'yellow') {
@@ -72,11 +143,48 @@ function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour
     <>
       <HomeStyles />
 
-      {/* HERO */}
+      <div className="day-switch-card">
+        <div>
+          <div className="day-switch-title">
+            {isToday ? 'Precios de hoy' : 'Precios de mañana'}
+          </div>
+          <div className="day-switch-sub">
+            {isToday ? todayDate : tomorrowDate || 'Disponible normalmente desde las 20:15'}
+          </div>
+        </div>
+
+        <div className="day-switch">
+          <button
+            type="button"
+            className={`day-btn ${selectedDay === 'today' ? 'active' : ''}`}
+            onClick={() => setSelectedDay('today')}
+          >
+            Hoy
+          </button>
+
+          <button
+            type="button"
+            className={`day-btn ${selectedDay === 'tomorrow' ? 'active' : ''}`}
+            onClick={() => tomorrowAvailable && setSelectedDay('tomorrow')}
+            disabled={!tomorrowAvailable}
+          >
+            Mañana
+          </button>
+        </div>
+      </div>
+
+      {!tomorrowAvailable && (
+        <div className="tomorrow-warning">
+          Los precios de mañana aún no están disponibles. Normalmente salen sobre las 20:15.
+        </div>
+      )}
+
       <div className="hero-action">
         <div className="hero-grid">
           <div className="hero-block">
-            <div className="hero-label">⚡ Ahora · {h(currentHour)}</div>
+            <div className="hero-label">
+              {isToday ? `⚡ Ahora · ${h(currentHour)}` : '📅 Primera hora de mañana'}
+            </div>
             <div
               className="hero-price inter-numbers"
               style={{
@@ -92,15 +200,18 @@ function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour
           </div>
 
           <div className="hero-block divider">
-            <div className="hero-label">🌙 Mejor hora hoy</div>
+            <div className="hero-label">🌙 Mejor hora {isToday ? 'hoy' : 'mañana'}</div>
             <div className="hero-price inter-numbers" style={{ color: 'var(--green-bright)', fontSize: 'clamp(36px,5vw,56px)' }}>
               {h(minP.hour)}
             </div>
             <div className="hero-unit">{fmt(minP.price)} c€/kWh · {fmtE(minP.price)} €/kWh</div>
-            <div className="hero-saving">
-              <span className="saving-pct inter-numbers">−{savingPct}%</span>
-              <span className="saving-text"> de ahorro frente al precio actual</span>
-            </div>
+
+            {isToday && (
+              <div className="hero-saving">
+                <span className="saving-pct inter-numbers">−{savingPct}%</span>
+                <span className="saving-text"> de ahorro frente al precio actual</span>
+              </div>
+            )}
           </div>
 
           <div className="hero-block divider">
@@ -126,28 +237,29 @@ function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour
         </div>
       </div>
 
-      {/* SEMAPHORE */}
-      <div className="semaphore">
-        <div className={`sem green ${sc === 'green' ? 'active' : ''}`}>
-          <div className="sem-row"><div className="sem-icon">🟢</div><div className="sem-title">Barato</div></div>
-          <div className="sem-desc">Menos de 10 c€/kWh — enciende lo que quieras</div>
+      {isToday && (
+        <div className="semaphore">
+          <div className={`sem green ${sc === 'green' ? 'active' : ''}`}>
+            <div className="sem-row"><div className="sem-icon">🟢</div><div className="sem-title">Barato</div></div>
+            <div className="sem-desc">Menos de 10 c€/kWh — enciende lo que quieras</div>
+          </div>
+          <div className={`sem yellow ${sc === 'yellow' ? 'active' : ''}`}>
+            <div className="sem-row"><div className="sem-icon">🟡</div><div className="sem-title">Moderado</div></div>
+            <div className="sem-desc">Entre 10 y 17 c€/kWh — con moderación</div>
+          </div>
+          <div className={`sem red ${sc === 'red' ? 'active' : ''}`}>
+            <div className="sem-row"><div className="sem-icon">🔴</div><div className="sem-title">Caro</div></div>
+            <div className="sem-desc">Más de 17 c€/kWh — apaga lo que puedas</div>
+          </div>
         </div>
-        <div className={`sem yellow ${sc === 'yellow' ? 'active' : ''}`}>
-          <div className="sem-row"><div className="sem-icon">🟡</div><div className="sem-title">Moderado</div></div>
-          <div className="sem-desc">Entre 10 y 17 c€/kWh — con moderación</div>
-        </div>
-        <div className={`sem red ${sc === 'red' ? 'active' : ''}`}>
-          <div className="sem-row"><div className="sem-icon">🔴</div><div className="sem-title">Caro</div></div>
-          <div className="sem-desc">Más de 17 c€/kWh — apaga lo que puedas</div>
-        </div>
-      </div>
+      )}
 
-      {/* CALCULATOR */}
-      <Calculator prices={prices} currentHour={currentHour} />
+      <Calculator prices={prices} currentHour={isToday ? currentHour : 0} />
 
-      {/* TABLE 24H */}
       <div className="card" style={{ marginTop: '32px' }}>
-        <div className="card-title">Tabla detallada de las 24 horas</div>
+        <div className="card-title">
+          Tabla detallada de las 24 horas · {isToday ? 'Hoy' : 'Mañana'}
+        </div>
         <div className="table-wrap">
           <table className="price-table">
             <thead>
@@ -156,7 +268,7 @@ function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour
             <tbody>
               {prices.map(p => {
                 const s = statusLabel(p.price);
-                const isCur = p.hour === currentHour;
+                const isCur = isToday && p.hour === currentHour;
                 const isBest = p.hour === minP.hour;
                 return (
                   <tr key={p.hour} className={`${isCur ? 'now-row' : ''}${isBest ? ' best-row' : ''}`}>
@@ -178,7 +290,6 @@ function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour
         </div>
       </div>
 
-      {/* CTAs */}
       <div style={{ marginTop: '32px', padding: '24px', background: 'var(--accent-bg)', border: '1px solid rgba(129,140,248,0.2)', borderRadius: '16px', textAlign: 'center' }}>
         <h3 style={{ fontFamily: 'Syne', fontSize: '18px', marginBottom: '8px' }}>📚 Aprende más sobre el precio de la luz</h3>
         <p style={{ color: 'var(--text-soft)', fontSize: '14px', marginBottom: '12px' }}>
@@ -197,6 +308,73 @@ function HomeContent({ prices, currentHour }: { prices: PriceData[]; currentHour
 function HomeStyles() {
   return (
     <style jsx global>{`
+      .day-switch-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .day-switch-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+
+      .day-switch-sub {
+        color: var(--text-soft);
+        font-size: 13px;
+      }
+
+      .day-switch {
+        display: flex;
+        gap: 8px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 6px;
+      }
+
+      .day-btn {
+        all: unset;
+        box-sizing: border-box;
+        min-width: 92px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 800;
+        text-align: center;
+        cursor: pointer;
+        color: var(--text-soft);
+        transition: all 0.2s ease;
+      }
+
+      .day-btn.active {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+      }
+
+      .day-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .tomorrow-warning {
+        background: var(--yellow-bg);
+        border: 1px solid rgba(245,158,11,0.25);
+        color: var(--yellow);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+
       .hero-action {
         background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
         border: 1px solid var(--border);
@@ -241,7 +419,21 @@ function HomeStyles() {
       .pill.green { background: var(--green-bg); color: var(--green-bright); }
       .pill.yellow { background: var(--yellow-bg); color: var(--yellow); }
       .pill.red { background: var(--red-bg); color: var(--red); }
+
       @media (max-width: 767px) {
+        .day-switch-card {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .day-switch {
+          width: 100%;
+        }
+
+        .day-btn {
+          flex: 1;
+        }
+
         .hero-grid { grid-template-columns: 1fr; gap: 20px; }
         .hero-block.divider { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 20px; }
         .hero-price { font-size: 44px; }
