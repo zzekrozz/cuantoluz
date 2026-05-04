@@ -1753,6 +1753,9 @@ function CalculatorStyles() {
   border-color: rgba(239, 68, 68, 0.35) !important;
   background: rgba(239, 68, 68, 0.08) !important;
 }
+.toggle-opt {
+  border: 5px solid red !important;
+}
     `}</style>
   );
 }
