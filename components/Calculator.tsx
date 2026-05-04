@@ -1230,35 +1230,33 @@ function CalculatorStyles() {
         border-radius: 12px;
       }
 
-      .toggle-opt {
-        all: unset;
-        flex: 1;
-        box-sizing: border-box;
-        padding: 12px 14px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 800;
-        color: var(--text-soft);
-        cursor: pointer;
-        font-family: 'DM Sans', sans-serif;
-        transition: all 0.2s ease;
-        min-height: 44px;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+.toggle-opt {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  background: transparent;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  text-align: center;
+}
 
-      .toggle-opt:hover {
-        color: var(--text);
-        background: rgba(255, 255, 255, 0.04);
-      }
+.toggle-opt:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
 
-      .toggle-opt.active {
-        background: var(--surface3);
-        color: var(--text);
-        box-shadow: inset 0 0 0 1px var(--border);
-      }
+.toggle-opt.active {
+  background: var(--surface3);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
 
 .btn-calc-big {
   width: 100%;
