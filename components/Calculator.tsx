@@ -45,7 +45,7 @@ function calculateVariableCost(
   prices: PriceData[],
   startH: number,
   startM: number,
-  durationHours: number,
+  durationHours: number, 
   totalKwh: number
 ) {
   if (!prices?.length || durationHours <= 0 || totalKwh <= 0) return 0;
