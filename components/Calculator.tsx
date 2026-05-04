@@ -45,7 +45,7 @@ function calculateVariableCost(
   prices: PriceData[],
   startH: number,
   startM: number,
-  durationHours: number, 
+  durationHours: number,
   totalKwh: number
 ) {
   if (!prices?.length || durationHours <= 0 || totalKwh <= 0) return 0;
@@ -74,9 +74,41 @@ function calculateVariableCost(
   return totalCost;
 }
 
+function findBestAndWorstCycle(
+  prices: PriceData[],
+  durationHours: number,
+  totalKwh: number
+) {
+  let bestHour = 0;
+  let worstHour = 0;
+  let bestCost = Infinity;
+  let worstCost = -Infinity;
+
+  for (let hour = 0; hour < 24; hour++) {
+    const cost = calculateVariableCost(prices, hour, 0, durationHours, totalKwh);
+
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestHour = hour;
+    }
+
+    if (cost > worstCost) {
+      worstCost = cost;
+      worstHour = hour;
+    }
+  }
+
+  return {
+    bestHour,
+    worstHour,
+    bestCost,
+    worstCost
+  };
+}
+
 export default function Calculator({ prices, currentHour }: Props) {
-  const minP = prices.reduce((a, b) => a.price < b.price ? a : b);
-  const maxP = prices.reduce((a, b) => a.price > b.price ? a : b);
+  const minP = prices.reduce((a, b) => (a.price < b.price ? a : b));
+  const maxP = prices.reduce((a, b) => (a.price > b.price ? a : b));
 
   const [activeCalc, setActiveCalc] = useState<ActiveCalc>('cycle');
 
@@ -115,26 +147,30 @@ export default function Calculator({ prices, currentHour }: Props) {
     setCycleApp(key);
     const app = appliances[key];
     setCycleKwh(app.kwh);
-    setCycleDuration(app.duration);
+    setCycleDuration(Math.max(1, Math.round(app.duration)));
   };
 
   const calcCycle = () => {
     const app = appliances[cycleApp];
     const startH = cycleStartH;
     const startM = cycleMode === 'simple' ? 0 : cycleStartM;
+    const safeDuration = Math.max(1, Math.round(cycleDuration));
 
-    const cost = calculateVariableCost(prices, startH, startM, cycleDuration, cycleKwh);
-    const costAtBest = calculateVariableCost(prices, minP.hour, 0, cycleDuration, cycleKwh);
-    const costAtWorst = calculateVariableCost(prices, maxP.hour, 0, cycleDuration, cycleKwh);
+    const cost = calculateVariableCost(prices, startH, startM, safeDuration, cycleKwh);
+    const bestWorst = findBestAndWorstCycle(prices, safeDuration, cycleKwh);
+
+    setCycleDuration(safeDuration);
 
     setCycleResult({
       cost,
-      costAtBest,
-      costAtWorst,
+      costAtBest: bestWorst.bestCost,
+      costAtWorst: bestWorst.worstCost,
+      bestHour: bestWorst.bestHour,
+      worstHour: bestWorst.worstHour,
       app,
       startH,
       startM,
-      duration: cycleDuration,
+      duration: safeDuration,
       kwh: cycleKwh,
       priceAtHour: getPriceAtHour(prices, startH)
     });
@@ -360,26 +396,31 @@ export default function Calculator({ prices, currentHour }: Props) {
               <div className="result-top-label">Te costará</div>
               <div
                 className="result-top-price"
-                style={{ color: color(cycleResult.priceAtHour) }}
+                style={{ color: color(cycleResult.cost / cycleResult.kwh) }}
               >
                 {fmtMoney(cycleResult.cost)}
               </div>
 
               <div className="result-top-info">
                 {cycleResult.app.icon} {cycleResult.app.label} a las{' '}
-                {hm(cycleResult.startH, cycleResult.startM)}
+                {hm(cycleResult.startH, cycleResult.startM)} durante{' '}
+                {cycleResult.duration}h
               </div>
 
               <div className="result-top-comparison">
                 <div className="result-mini">
-                  <span className="result-mini-label">Mejor hora ({h(minP.hour)})</span>
+                  <span className="result-mini-label">
+                    Mejor bloque ({h(cycleResult.bestHour)})
+                  </span>
                   <span className="result-mini-value green">
                     {fmtMoney(cycleResult.costAtBest)}
                   </span>
                 </div>
 
                 <div className="result-mini">
-                  <span className="result-mini-label">Peor hora ({h(maxP.hour)})</span>
+                  <span className="result-mini-label">
+                    Peor bloque ({h(cycleResult.worstHour)})
+                  </span>
                   <span className="result-mini-value red">
                     {fmtMoney(cycleResult.costAtWorst)}
                   </span>
@@ -471,21 +512,25 @@ export default function Calculator({ prices, currentHour }: Props) {
               <input
                 type="number"
                 value={cycleDuration}
-                onChange={e => setCycleDuration(parseFloat(e.target.value) || 0)}
-                min="0.5"
-                max="8"
-                step="0.5"
+                onChange={e => {
+                  const value = parseInt(e.target.value, 10);
+                  setCycleDuration(Number.isNaN(value) ? 1 : Math.max(1, Math.min(24, value)));
+                }}
+                min="1"
+                max="24"
+                step="1"
+                inputMode="numeric"
               />
             </div>
 
             <div className="big-field">
-              <label>Consumo (kWh)</label>
+              <label>Consumo total del ciclo (kWh)</label>
               <input
                 type="number"
                 value={cycleKwh}
                 onChange={e => setCycleKwh(parseFloat(e.target.value) || 0)}
                 min="0.1"
-                max="5"
+                max="10"
                 step="0.1"
               />
             </div>
@@ -496,8 +541,7 @@ export default function Calculator({ prices, currentHour }: Props) {
           </button>
         </div>
       </div>
-
-      <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
+            <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">❄️ Aire, TV, calefacción por horas</div>
 
@@ -907,10 +951,14 @@ export default function Calculator({ prices, currentHour }: Props) {
                 <input
                   type="number"
                   value={myDayDuration}
-                  onChange={e => setMyDayDuration(parseFloat(e.target.value) || 0)}
-                  min="0.25"
+                  onChange={e => {
+                    const value = parseInt(e.target.value, 10);
+                    setMyDayDuration(Number.isNaN(value) ? 1 : Math.max(1, Math.min(24, value)));
+                  }}
+                  min="1"
                   max="24"
-                  step="0.25"
+                  step="1"
+                  inputMode="numeric"
                 />
               </div>
             </div>
@@ -1025,18 +1073,25 @@ function CalculatorStyles() {
         margin-bottom: 16px;
       }
 
-      .calc-nav-btn {
+      .calc-nav button,
+      .calc-section button,
+      .toggle-row button,
+      .time-range-card button,
+      .myday-list button {
         all: unset;
         box-sizing: border-box;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+      }
+
+      .calc-nav-btn {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 14px 8px;
-        cursor: pointer;
-        font-family: inherit;
+        color: var(--text-soft);
         text-align: center;
         transition: all 0.2s ease;
-        color: var(--text-soft);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1230,68 +1285,66 @@ function CalculatorStyles() {
         border-radius: 12px;
       }
 
-.toggle-opt {
-  flex: 1;
-  box-sizing: border-box;
-  padding: 12px 14px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text-soft);
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  background: transparent;
-  transition: all 0.2s ease;
-  min-height: 44px;
-  text-align: center;
-}
+      .toggle-opt {
+        flex: 1;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--text-soft);
+        background: transparent;
+        min-height: 44px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
 
-.toggle-opt:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
-}
+      .toggle-opt:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.04);
+      }
 
-.toggle-opt.active {
-  background: var(--surface3);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--border);
-}
+      .toggle-opt.active {
+        background: var(--surface3);
+        color: var(--text);
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
 
-.btn-calc-big {
-  width: 100%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-  border: none;
-  border-radius: 14px;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 16px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 56px;
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  letter-spacing: -0.2px;
-}
+      .btn-calc-big {
+        width: 100%;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border-radius: 14px;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 16px;
+        padding: 16px;
+        min-height: 56px;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        letter-spacing: -0.2px;
+        transition: all 0.2s ease;
+      }
 
-.btn-calc-big:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
-}
+      .btn-calc-big:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
+      }
 
-.btn-calc-big:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
+      .btn-calc-big:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
 
-.btn-calc-big.btn-add {
-  background: linear-gradient(135deg, var(--green), var(--green-bright));
-}
+      .btn-calc-big.btn-add {
+        background: linear-gradient(135deg, var(--green), var(--green-bright));
+        color: #06150c;
+      }
 
       .time-range-card {
         background: var(--surface2);
@@ -1338,8 +1391,7 @@ function CalculatorStyles() {
       }
 
       .trange-remove {
-        all: unset;
-        box-sizing: border-box;
+        width: 100%;
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.25);
         color: var(--red);
@@ -1347,9 +1399,7 @@ function CalculatorStyles() {
         padding: 9px 12px;
         font-size: 12px;
         font-weight: 800;
-        cursor: pointer;
         margin-top: 8px;
-        width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1362,16 +1412,12 @@ function CalculatorStyles() {
       }
 
       .btn-add-range {
-        all: unset;
-        box-sizing: border-box;
+        width: 100%;
         background: var(--accent-bg);
         color: var(--accent);
         border: 1px dashed rgba(129, 140, 248, 0.4);
         border-radius: 12px;
         padding: 13px 14px;
-        width: 100%;
-        cursor: pointer;
-        font-family: 'DM Sans', sans-serif;
         font-size: 14px;
         font-weight: 800;
         margin-top: 8px;
@@ -1465,12 +1511,9 @@ function CalculatorStyles() {
       }
 
       .myday-remove {
-        all: unset;
-        box-sizing: border-box;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid var(--border);
         color: var(--muted);
-        cursor: pointer;
         font-size: 18px;
         font-weight: 800;
         border-radius: 10px;
@@ -1548,214 +1591,7 @@ function CalculatorStyles() {
         .trange-row {
           flex-wrap: wrap;
         }
-        .calculator-grid button.toggle-opt,
-.big-field button.toggle-opt,
-.toggle-row button.toggle-opt {
-  appearance: none;
-  -webkit-appearance: none;
-  flex: 1;
-  box-sizing: border-box;
-  padding: 12px 14px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text-soft);
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  background: transparent;
-  transition: all 0.2s ease;
-  min-height: 44px;
-  text-align: center;
-}
-
-.calculator-grid button.toggle-opt:hover,
-.big-field button.toggle-opt:hover,
-.toggle-row button.toggle-opt:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.calculator-grid button.toggle-opt.active,
-.big-field button.toggle-opt.active,
-.toggle-row button.toggle-opt.active {
-  background: var(--surface3);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--border);
-}
       }
-      /* FIX DEFINITIVO BOTONES CALCULADORA */
-
-.calc-nav button,
-.calc-section button,
-.toggle-row button,
-.time-range-card button,
-.myday-list button {
-  all: unset !important;
-  box-sizing: border-box !important;
-  font-family: 'DM Sans', sans-serif !important;
-  cursor: pointer !important;
-}
-
-/* Botones de pestañas superiores */
-.calc-nav-btn {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-  padding: 14px 8px !important;
-  color: var(--text-soft) !important;
-  text-align: center !important;
-  transition: all 0.2s ease !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.calc-nav-btn:hover {
-  border-color: var(--accent) !important;
-  transform: translateY(-1px) !important;
-}
-
-.calc-nav-btn.active {
-  background: var(--accent-bg) !important;
-  border-color: var(--accent) !important;
-  color: var(--text) !important;
-}
-
-/* Botones tipo Solo horas / Con minutos / Casa / Rápida */
-.toggle-opt {
-  flex: 1 !important;
-  padding: 12px 14px !important;
-  border-radius: 10px !important;
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  color: var(--text-soft) !important;
-  background: transparent !important;
-  min-height: 44px !important;
-  text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.2s ease !important;
-}
-
-.toggle-opt:hover {
-  color: var(--text) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-}
-
-.toggle-opt.active {
-  background: var(--surface3) !important;
-  color: var(--text) !important;
-  box-shadow: inset 0 0 0 1px var(--border) !important;
-}
-
-/* Botones grandes: Calcular, Añadir, Optimizar */
-.btn-calc-big {
-  width: 100% !important;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-  color: white !important;
-  border-radius: 14px !important;
-  font-family: 'Syne', sans-serif !important;
-  font-weight: 800 !important;
-  font-size: 16px !important;
-  padding: 16px !important;
-  min-height: 56px !important;
-  margin-top: 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  letter-spacing: -0.2px !important;
-  transition: all 0.2s ease !important;
-}
-
-.btn-calc-big:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28) !important;
-}
-
-.btn-calc-big:active {
-  transform: translateY(0) !important;
-  box-shadow: none !important;
-}
-
-.btn-calc-big.btn-add {
-  background: linear-gradient(135deg, var(--green), var(--green-bright)) !important;
-  color: #06150c !important;
-}
-
-/* Botón añadir franja */
-.btn-add-range {
-  width: 100% !important;
-  background: var(--accent-bg) !important;
-  color: var(--accent) !important;
-  border: 1px dashed rgba(129, 140, 248, 0.4) !important;
-  border-radius: 12px !important;
-  padding: 13px 14px !important;
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  margin-top: 8px !important;
-  min-height: 48px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  transition: all 0.2s ease !important;
-}
-
-.btn-add-range:hover {
-  background: rgba(129, 140, 248, 0.16) !important;
-  border-color: rgba(129, 140, 248, 0.65) !important;
-}
-
-/* Botón quitar franja */
-.trange-remove {
-  width: 100% !important;
-  background: rgba(239, 68, 68, 0.1) !important;
-  border: 1px solid rgba(239, 68, 68, 0.25) !important;
-  color: var(--red) !important;
-  border-radius: 10px !important;
-  padding: 9px 12px !important;
-  font-size: 12px !important;
-  font-weight: 800 !important;
-  margin-top: 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  transition: all 0.2s ease !important;
-}
-
-.trange-remove:hover {
-  background: rgba(239, 68, 68, 0.16) !important;
-}
-
-/* Botón X de Mi día */
-.myday-remove {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--muted) !important;
-  font-size: 18px !important;
-  font-weight: 800 !important;
-  border-radius: 10px !important;
-  min-height: 34px !important;
-  min-width: 34px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.2s ease !important;
-}
-
-.myday-remove:hover {
-  color: var(--red) !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
-  background: rgba(239, 68, 68, 0.08) !important;
-}
-.toggle-opt {
-  border: 5px solid red !important;
-}
     `}</style>
   );
 }
