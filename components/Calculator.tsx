@@ -1026,6 +1026,8 @@ function CalculatorStyles() {
       }
 
       .calc-nav-btn {
+        all: unset;
+        box-sizing: border-box;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
@@ -1035,6 +1037,10 @@ function CalculatorStyles() {
         text-align: center;
         transition: all 0.2s ease;
         color: var(--text-soft);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
 
       .calc-nav-btn:hover {
@@ -1225,48 +1231,70 @@ function CalculatorStyles() {
       }
 
       .toggle-opt {
+        all: unset;
         flex: 1;
-        padding: 12px;
-        border-radius: 8px;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        border-radius: 10px;
         font-size: 14px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--text-soft);
         cursor: pointer;
-        border: none;
-        background: transparent;
-        font-family: inherit;
+        font-family: 'DM Sans', sans-serif;
         transition: all 0.2s ease;
         min-height: 44px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .toggle-opt:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.04);
       }
 
       .toggle-opt.active {
         background: var(--surface3);
         color: var(--text);
+        box-shadow: inset 0 0 0 1px var(--border);
       }
 
       .btn-calc-big {
+        all: unset;
+        box-sizing: border-box;
         width: 100%;
-        background: var(--accent-soft);
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: white;
-        border: none;
         border-radius: 14px;
         font-family: 'Syne', sans-serif;
-        font-weight: 700;
-        font-size: 17px;
+        font-weight: 800;
+        font-size: 16px;
         padding: 16px;
         cursor: pointer;
         transition: all 0.2s ease;
         min-height: 56px;
         margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        letter-spacing: -0.2px;
       }
 
       .btn-calc-big:hover {
-        opacity: 0.92;
         transform: translateY(-1px);
+        box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
+      }
+
+      .btn-calc-big:active {
+        transform: translateY(0);
+        box-shadow: none;
       }
 
       .btn-calc-big.btn-add {
-        background: var(--green);
+        background: linear-gradient(135deg, var(--green), var(--green-bright));
+        color: #06150c;
       }
 
       .time-range-card {
@@ -1314,31 +1342,54 @@ function CalculatorStyles() {
       }
 
       .trange-remove {
+        all: unset;
+        box-sizing: border-box;
         background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.25);
         color: var(--red);
-        border-radius: 8px;
-        padding: 8px 12px;
+        border-radius: 10px;
+        padding: 9px 12px;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 800;
         cursor: pointer;
         margin-top: 8px;
         width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: all 0.2s ease;
+      }
+
+      .trange-remove:hover {
+        background: rgba(239, 68, 68, 0.16);
       }
 
       .btn-add-range {
+        all: unset;
+        box-sizing: border-box;
         background: var(--accent-bg);
         color: var(--accent);
-        border: 1px dashed rgba(129, 140, 248, 0.3);
+        border: 1px dashed rgba(129, 140, 248, 0.4);
         border-radius: 12px;
-        padding: 12px;
+        padding: 13px 14px;
         width: 100%;
         cursor: pointer;
-        font-family: inherit;
+        font-family: 'DM Sans', sans-serif;
         font-size: 14px;
-        font-weight: 700;
+        font-weight: 800;
         margin-top: 8px;
         min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        transition: all 0.2s ease;
+      }
+
+      .btn-add-range:hover {
+        background: rgba(129, 140, 248, 0.16);
+        border-color: rgba(129, 140, 248, 0.65);
       }
 
       .custom-block {
@@ -1418,18 +1469,27 @@ function CalculatorStyles() {
       }
 
       .myday-remove {
-        background: transparent;
-        border: none;
+        all: unset;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
         color: var(--muted);
         cursor: pointer;
-        font-size: 20px;
-        padding: 4px 8px;
-        min-height: 32px;
-        min-width: 32px;
+        font-size: 18px;
+        font-weight: 800;
+        border-radius: 10px;
+        min-height: 34px;
+        min-width: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
       }
 
       .myday-remove:hover {
         color: var(--red);
+        border-color: rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.08);
       }
 
       .myday-tips {
