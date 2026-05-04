@@ -1260,42 +1260,40 @@ function CalculatorStyles() {
         box-shadow: inset 0 0 0 1px var(--border);
       }
 
-      .btn-calc-big {
-        all: unset;
-        box-sizing: border-box;
-        width: 100%;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: white;
-        border-radius: 14px;
-        font-family: 'Syne', sans-serif;
-        font-weight: 800;
-        font-size: 16px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        min-height: 56px;
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        letter-spacing: -0.2px;
-      }
+.btn-calc-big {
+  width: 100%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 56px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  letter-spacing: -0.2px;
+}
 
-      .btn-calc-big:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
-      }
+.btn-calc-big:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.28);
+}
 
-      .btn-calc-big:active {
-        transform: translateY(0);
-        box-shadow: none;
-      }
+.btn-calc-big:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
 
-      .btn-calc-big.btn-add {
-        background: linear-gradient(135deg, var(--green), var(--green-bright));
-        color: #06150c;
-      }
+.btn-calc-big.btn-add {
+  background: linear-gradient(135deg, var(--green), var(--green-bright));
+}
 
       .time-range-card {
         background: var(--surface2);
