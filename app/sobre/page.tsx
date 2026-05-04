@@ -45,7 +45,7 @@ export default function Sobre() {
       <h2>Contacto</h2>
       <p>
         Para cualquier consulta, sugerencia o problema técnico, puedes escribirnos a{' '}
-        <a href="mailto:contacto@cuantoluz.es">contacto@cuantoluz.es</a>.
+        <a href="mailto:cuantoluz@gmail.com">cuantoluz@gmail.com</a>.
       </p>
     </article>
   );

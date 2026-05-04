@@ -9,82 +9,193 @@ export default function ComoAhorrar() {
   return (
     <article className="article container-sm">
       <h1>Cómo ahorrar en la factura de la luz</h1>
-      <p className="lead">
-        Te vamos a contar los trucos que realmente funcionan. Sin venderte humo, sin pedirte
-        que cambies de compañía, sin instalar nada caro.
-      </p>
+      <div className="lead">
+<div style={{ marginTop: '20px' }}>
 
-      <h2>1. Consulta el precio antes de poner cosas grandes</h2>
-      <p>
-        La diferencia entre la hora más barata y la más cara puede ser de hasta el 80% en un
-        mismo día. Si pones la lavadora a las 3 de la madrugada en lugar de a las 8 de la tarde,
-        puedes pagar 4 veces menos por el mismo lavado.
-      </p>
-      <p>
-        Consulta cada día el precio en CuantoLuz y programa los aparatos grandes en las horas baratas.
-      </p>
+  <h2>Cómo ahorrar de verdad</h2>
+  <ul>
+    <li>Aprovecha las horas valle siempre que puedas</li>
+    <li>Evita el uso de electrodomésticos en horas punta</li>
+    <li>Consulta el precio antes de consumir</li>
+    <li>Ajusta tus hábitos de forma progresiva</li>
+  </ul>
 
-      <h2>2. Usa el programador de tus electrodomésticos</h2>
-      <p>
-        Casi todas las lavadoras, lavavajillas y secadoras modernas tienen un botón de programación
-        con retraso. Pones la ropa por la noche, le dices que arranque a las 3, y a la mañana
-        siguiente está lista.
-      </p>
-      <p>
-        Si tu aparato no lo trae, un enchufe con temporizador cuesta menos de 10 euros y hace lo mismo.
-      </p>
+  <h2>Horas valle (las más baratas)</h2>
+  <p>
+    Son los periodos en los que el precio de la electricidad es más bajo.
+  </p>
 
-      <h2>3. Termo eléctrico solo de noche</h2>
-      <p>
-        Si tienes termo eléctrico (acumulador), es uno de los mayores gastos del hogar. Programa
-        para que solo caliente agua entre las 2 y las 6 de la madrugada. El agua se mantiene
-        caliente todo el día y ahorrarás muchísimo.
-      </p>
+  <p><strong>Cuándo son:</strong></p>
+  <ul>
+    <li>De lunes a viernes: de 00:00 a 08:00</li>
+    <li>Fines de semana y festivos: durante todo el día</li>
+  </ul>
 
-      <h2>4. Coche eléctrico siempre por la noche</h2>
-      <p>
-        Si tienes coche eléctrico, no lo cargues nunca al llegar a casa. Programa la carga
-        entre las 0:00 y las 7:00. La diferencia anual puede superar los 500 euros.
-      </p>
+  <p><strong>Recomendado para:</strong></p>
+  <ul>
+    <li>Lavadora</li>
+    <li>Lavavajillas</li>
+    <li>Carga de vehículo eléctrico</li>
+    <li>Uso de electrodomésticos de alto consumo</li>
+  </ul>
 
-      <h2>5. Revisa tu potencia contratada</h2>
-      <p>
-        Mucha gente paga por más potencia (kW) de la que realmente necesita. Si nunca saltan
-        los plomos, probablemente puedes bajar la potencia contratada y ahorrar entre 5 y 15
-        euros al mes solo en el término fijo.
-      </p>
+  <h2>Horas llano (precio intermedio)</h2>
+  <p>
+    Son tramos con un coste moderado de electricidad.
+  </p>
 
-      <h2>6. Aire acondicionado a 24 grados</h2>
-      <p>
-        Cada grado por debajo aumenta el consumo aproximadamente un 8%. Si lo pones a 21
-        en lugar de a 24, estás pagando casi un 25% más.
-      </p>
+  <p><strong>Cuándo son:</strong></p>
+  <ul>
+    <li>08:00 – 10:00</li>
+    <li>14:00 – 18:00</li>
+    <li>22:00 – 00:00</li>
+  </ul>
 
-      <h2>7. Calefacción a 20 grados máximo</h2>
-      <p>
-        Lo mismo en invierno. Cada grado por encima dispara la factura. 20 grados es
-        temperatura confortable y eficiente.
-      </p>
+  <p><strong>Uso recomendado:</strong></p>
+  <ul>
+    <li>Consumo habitual con cierta moderación</li>
+  </ul>
 
-      <h2>8. Frigorífico a la temperatura correcta</h2>
-      <p>
-        Frigorífico a 5°C y congelador a -18°C son las temperaturas óptimas. Más frío de
-        eso solo gasta más sin aportar nada.
-      </p>
+  <h2>Horas punta (las más caras)</h2>
+  <p>
+    Son los periodos con mayor demanda y precios más elevados.
+  </p>
 
-      <h2>9. Apaga el modo standby</h2>
-      <p>
-        La televisión, el router, el microondas, el ordenador... todos consumen aunque
-        estén apagados. Una regleta con interruptor te ayuda a cortar todo el consumo
-        fantasma cuando no lo usas. Puede suponer un 7-10% de tu factura.
-      </p>
+  <p><strong>Cuándo son:</strong></p>
+  <ul>
+    <li>10:00 – 14:00</li>
+    <li>18:00 – 22:00</li>
+  </ul>
 
-      <h2>10. Aprovecha los días de viento y sol</h2>
-      <p>
-        Mira la previsión del tiempo. Los días con mucho viento o mucho sol los precios
-        eléctricos suelen bajar. Aprovecha esos días para hacer coladas grandes, cargar
-        el coche o llenar el termo.
-      </p>
+<div className="reco-block">
+  <div className="reco-title">Recomendaciones</div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">1.</span>
+       Consulta el precio antes de usar electrodomésticos de alto consumo
+    </div>
+    <p className="reco-card-text">
+       La diferencia entre la hora más barata y la más cara puede ser de hasta el 80% en un mismo día.
+      Si pones la lavadora a las 3 de la madrugada en lugar de a las 8 de la tarde, puedes pagar hasta
+      cuatro veces menos por el mismo lavado.
+    </p>
+    <p className="reco-card-text">
+      Consulta cada día el precio en CuantoLuz y programa los aparatos grandes en las horas más baratas.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">2.</span>
+      Usa el programador de tus electrodomésticos
+    </div>
+    <p className="reco-card-text">
+      Muchas lavadoras, lavavajillas y secadoras modernas permiten programar el inicio. Puedes dejarlas
+      preparadas por la noche y hacer que funcionen durante las horas más baratas.
+    </p>
+    <p className="reco-card-text">
+      Si tu aparato no tiene programación, un enchufe con temporizador puede hacer una función similar.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">3.</span>
+      Programa el termo eléctrico por la noche
+    </div>
+    <p className="reco-card-text">
+      El termo eléctrico puede ser uno de los mayores consumos del hogar. Si lo programas para calentar
+      agua durante la madrugada, puedes aprovechar las horas más baratas y mantener el agua caliente
+      durante buena parte del día.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">4.</span>
+      Carga el coche eléctrico en horario nocturno
+    </div>
+    <p className="reco-card-text">
+      Si tienes coche eléctrico, evita cargarlo justo al llegar a casa si coincide con horas caras.
+      Programar la carga entre la medianoche y las primeras horas de la mañana puede suponer un ahorro
+      importante a lo largo del año.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">5.</span>
+      Revisa tu potencia contratada
+    </div>
+    <p className="reco-card-text">
+      Muchas viviendas pagan por más potencia de la que realmente necesitan. Si nunca saltan los plomos,
+      puede que puedas bajar la potencia contratada y ahorrar cada mes en el término fijo de la factura.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">6.</span>
+      Ajusta el aire acondicionado a una temperatura eficiente
+    </div>
+    <p className="reco-card-text">
+      Cada grado por debajo de 24°C aumenta el consumo. Mantener el aire acondicionado en torno a 24°C
+      ayuda a reducir el gasto sin perder demasiado confort.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">7.</span>
+      Controla la calefacción en invierno
+    </div>
+    <p className="reco-card-text">
+      En invierno, cada grado extra también incrementa el consumo. Una temperatura cercana a 20°C suele
+      ser suficiente para mantener confort y controlar la factura.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">8.</span>
+      Ajusta correctamente el frigorífico
+    </div>
+    <p className="reco-card-text">
+      Una temperatura de 5°C para el frigorífico y -18°C para el congelador suele ser suficiente.
+      Ponerlos más fríos no mejora mucho la conservación, pero sí aumenta el consumo.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">9.</span>
+      Reduce el consumo en standby
+    </div>
+    <p className="reco-card-text">
+      Televisores, microondas, ordenadores, cargadores y otros aparatos pueden consumir aunque parezcan
+      apagados. Una regleta con interruptor te permite cortar ese consumo fantasma cuando no los usas.
+    </p>
+  </div>
+
+  <div className="reco-card">
+    <div className="reco-card-title">
+      <span className="reco-num">10.</span>
+      Aprovecha los días con alta producción renovable
+    </div>
+    <p className="reco-card-text">
+      En días con mucho viento o mucha producción solar, el precio de la electricidad suele bajar.
+      Aprovecha esos momentos para hacer coladas grandes, cargar el coche eléctrico o calentar el termo.
+    </p>
+  </div>
+</div>
+</div>   
+</div>
+
+       
+      
+
+      
 
       <h2>Cuánto puedes ahorrar realmente</h2>
       <p>

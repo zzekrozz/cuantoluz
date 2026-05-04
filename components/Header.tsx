@@ -16,7 +16,7 @@ export default function Header() {
   return (
     <nav className="main-nav">
       <Link href="/" className="logo">
-        <div className="logo-icon">⚡</div>
+        
         Cuanto<em onClick={toggleTheme}>Luz</em>
       </Link>
       <div className="nav-links">

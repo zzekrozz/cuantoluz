@@ -17,6 +17,12 @@ export default function Footer() {
         <div className="footer-info">
           Datos de Red Eléctrica de España (REE) · Actualizados automáticamente · cuantoluz.es
           <br />
+          <p style={{ marginTop: '8px' }}>
+  ¿Errores, sugerencias o colaboraciones?{' '}
+  <a href="mailto:cuantoluz@gmail.com" style={{ color: 'var(--green-bright)' }}>
+    Contáctanos
+  </a>
+</p>
           © {new Date().getFullYear()} CuantoLuz. Esta web es informativa.
         </div>
       </div>
