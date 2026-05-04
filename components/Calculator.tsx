@@ -1548,6 +1548,41 @@ function CalculatorStyles() {
         .trange-row {
           flex-wrap: wrap;
         }
+        .calculator-grid button.toggle-opt,
+.big-field button.toggle-opt,
+.toggle-row button.toggle-opt {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  background: transparent;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  text-align: center;
+}
+
+.calculator-grid button.toggle-opt:hover,
+.big-field button.toggle-opt:hover,
+.toggle-row button.toggle-opt:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.calculator-grid button.toggle-opt.active,
+.big-field button.toggle-opt.active,
+.toggle-row button.toggle-opt.active {
+  background: var(--surface3);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
       }
     `}</style>
   );
