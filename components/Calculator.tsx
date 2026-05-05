@@ -41,6 +41,15 @@ interface TimeRange {
 
 type ActiveCalc = 'time' | 'ev' | 'myday';
 
+const defaultOverrides: Record<string, { kwh?: number; kw?: number }> = {
+  lavadora_basica: { kwh: 1.0 },
+  lavadora_normal: { kwh: 1.0 },
+  lavadora_estandar: { kwh: 1.0 },
+  lavadora_eficiente: { kwh: 0.6 },
+  lavadora_a: { kwh: 0.6 },
+  lavadora_a9: { kwh: 0.6 }
+};
+
 function calculateVariableCost(
   prices: PriceData[],
   startH: number,
@@ -79,6 +88,33 @@ export default function Calculator({ prices, currentHour }: Props) {
   const maxP = prices.reduce((a, b) => (a.price > b.price ? a : b));
 
   const [activeCalc, setActiveCalc] = useState<ActiveCalc>('time');
+  const [customOverrides, setCustomOverrides] = useState(defaultOverrides);
+
+  const getAppType = (key: string) => appliances[key]?.type;
+
+  const getAppKwh = (key: string) => {
+    const app = appliances[key];
+    const override = customOverrides[key];
+
+    if (override?.kwh !== undefined) return override.kwh;
+    if (app?.kwh !== undefined) return app.kwh;
+
+    return 1;
+  };
+
+  const getAppKw = (key: string) => {
+    const app = appliances[key];
+    const override = customOverrides[key];
+
+    if (override?.kw !== undefined) return override.kw;
+    if (app?.kw !== undefined) return app.kw;
+
+    if (app?.type === 'cycle') {
+      return getAppKwh(key) / Math.max(1, app.duration || 1);
+    }
+
+    return 1;
+  };
 
   const [timeApp, setTimeApp] = useState('aire_inverter');
   const [timeKw, setTimeKw] = useState(1.0);
@@ -103,19 +139,39 @@ export default function Calculator({ prices, currentHour }: Props) {
   const [myDayItems, setMyDayItems] = useState<MyDayItem[]>([]);
   const [showOptimization, setShowOptimization] = useState(false);
 
-  const getApplianceKw = (key: string) => {
-    const app = appliances[key];
-
-    if (app.type === 'cycle') {
-      return app.kwh / Math.max(1, app.duration || 1);
-    }
-
-    return app.kw;
-  };
-
   const handleTimeAppChange = (key: string) => {
     setTimeApp(key);
-    setTimeKw(getApplianceKw(key));
+    setTimeKw(getAppKw(key));
+    setTimeResult(null);
+  };
+
+  const updateCustomConsumption = (key: string, value: number) => {
+    if (getAppType(key) === 'cycle') {
+      setCustomOverrides(prev => ({
+        ...prev,
+        [key]: {
+          ...prev[key],
+          kwh: value
+        }
+      }));
+    } else {
+      setTimeKw(value);
+      setCustomOverrides(prev => ({
+        ...prev,
+        [key]: {
+          ...prev[key],
+          kw: value
+        }
+      }));
+    }
+  };
+
+  const getEnergyForApp = (key: string, durationH: number, customKw?: number) => {
+    if (getAppType(key) === 'cycle') {
+      return getAppKwh(key);
+    }
+
+    return (customKw ?? getAppKw(key)) * durationH;
   };
 
   const addTimeRange = () => {
@@ -144,6 +200,8 @@ export default function Calculator({ prices, currentHour }: Props) {
 
   const calcTime = () => {
     const app = appliances[timeApp];
+    const isCycle = app.type === 'cycle';
+
     let totalCost = 0;
     let totalMinutes = 0;
     const rangeDetails: any[] = [];
@@ -158,7 +216,7 @@ export default function Calculator({ prices, currentHour }: Props) {
 
       const durationMin = endTotalMin - startTotalMin;
       const durationH = durationMin / 60;
-      const totalKwhRange = timeKw * durationH;
+      const totalKwhRange = getEnergyForApp(timeApp, durationH, timeKw);
 
       const rangeCost = calculateVariableCost(
         prices,
@@ -181,7 +239,7 @@ export default function Calculator({ prices, currentHour }: Props) {
     });
 
     const totalHours = totalMinutes / 60;
-    const totalKwh = timeKw * totalHours;
+    const totalKwh = rangeDetails.reduce((sum, r) => sum + r.kwh, 0);
 
     setTimeResult({
       totalCost,
@@ -189,6 +247,7 @@ export default function Calculator({ prices, currentHour }: Props) {
       totalHours,
       app,
       kw: timeKw,
+      isCycle,
       rangeDetails,
       costAtBest: totalKwh * minP.price,
       costAtWorst: totalKwh * maxP.price
@@ -234,8 +293,7 @@ export default function Calculator({ prices, currentHour }: Props) {
   const addToMyDay = () => {
     const app = appliances[myDayApp];
     const safeDuration = Math.max(1, Math.round(myDayDuration));
-    const kw = getApplianceKw(myDayApp);
-    const kwh = kw * safeDuration;
+    const kwh = getEnergyForApp(myDayApp, safeDuration);
     const cost = calculateVariableCost(prices, myDayHour, myDayMin, safeDuration, kwh);
 
     setMyDayItems([
@@ -337,6 +395,12 @@ export default function Calculator({ prices, currentHour }: Props) {
                 {timeResult.totalHours.toFixed(2)}h · {timeResult.totalKwh.toFixed(2)} kWh
               </div>
 
+              {timeResult.isCycle && (
+                <div className="cycle-note">
+                  Este aparato se calcula como consumo total del ciclo, no como consumo lineal por hora.
+                </div>
+              )}
+
               <div className="range-details">
                 {timeResult.rangeDetails.map((range: any, index: number) => (
                   <div key={index}>
@@ -378,13 +442,13 @@ export default function Calculator({ prices, currentHour }: Props) {
                 {Object.entries(appliances)
                   .filter(([_, value]) => value.type === 'time' || value.type === 'cycle')
                   .map(([key, value]) => {
-                    const kw = value.type === 'cycle'
-                      ? value.kwh / Math.max(1, value.duration || 1)
-                      : value.kw;
+                    const isCycle = value.type === 'cycle';
+                    const consumption = isCycle ? getAppKwh(key) : getAppKw(key);
 
                     return (
                       <option key={key} value={key}>
-                        {value.icon} {value.label} · {kw.toFixed(2)} kW aprox.
+                        {value.icon} {value.label} · {consumption.toFixed(2)}{' '}
+                        {isCycle ? 'kWh/ciclo' : 'kW'}
                       </option>
                     );
                   })}
@@ -392,11 +456,15 @@ export default function Calculator({ prices, currentHour }: Props) {
             </div>
 
             <div className="big-field">
-              <label>Potencia estimada (kW)</label>
+              <label>
+                {getAppType(timeApp) === 'cycle'
+                  ? 'Consumo total estimado (kWh)'
+                  : 'Potencia estimada (kW)'}
+              </label>
               <input
                 type="number"
-                value={timeKw}
-                onChange={e => setTimeKw(parseFloat(e.target.value) || 0)}
+                value={getAppType(timeApp) === 'cycle' ? getAppKwh(timeApp) : timeKw}
+                onChange={e => updateCustomConsumption(timeApp, parseFloat(e.target.value) || 0)}
                 min="0.01"
                 max="20"
                 step="0.01"
@@ -409,60 +477,64 @@ export default function Calculator({ prices, currentHour }: Props) {
 
             {timeRanges.map(range => (
               <div key={range.id} className="time-range-card">
-                <div className="trange-row">
-                  <span className="trange-label">Desde</span>
+                <div className="trange-grid">
+                  <div className="trange-group">
+                    <span className="trange-label">Desde</span>
+                    <div className="trange-selects">
+                      <select
+                        value={range.startH}
+                        onChange={e => updateTimeRange(range.id, 'startH', parseInt(e.target.value))}
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i}>
+                            {String(i).padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
 
-                  <select
-                    value={range.startH}
-                    onChange={e => updateTimeRange(range.id, 'startH', parseInt(e.target.value))}
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {String(i).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
+                      <span className="trange-separator">:</span>
 
-                  <span className="trange-separator">:</span>
+                      <select
+                        value={range.startM}
+                        onChange={e => updateTimeRange(range.id, 'startM', parseInt(e.target.value))}
+                      >
+                        {[0, 15, 30, 45].map(minute => (
+                          <option key={minute} value={minute}>
+                            {String(minute).padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                  <select
-                    value={range.startM}
-                    onChange={e => updateTimeRange(range.id, 'startM', parseInt(e.target.value))}
-                  >
-                    {[0, 15, 30, 45].map(minute => (
-                      <option key={minute} value={minute}>
-                        {String(minute).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="trange-group">
+                    <span className="trange-label">Hasta</span>
+                    <div className="trange-selects">
+                      <select
+                        value={range.endH}
+                        onChange={e => updateTimeRange(range.id, 'endH', parseInt(e.target.value))}
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i}>
+                            {String(i).padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
 
-                <div className="trange-row">
-                  <span className="trange-label">Hasta</span>
+                      <span className="trange-separator">:</span>
 
-                  <select
-                    value={range.endH}
-                    onChange={e => updateTimeRange(range.id, 'endH', parseInt(e.target.value))}
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {String(i).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-
-                  <span className="trange-separator">:</span>
-
-                  <select
-                    value={range.endM}
-                    onChange={e => updateTimeRange(range.id, 'endM', parseInt(e.target.value))}
-                  >
-                    {[0, 15, 30, 45].map(minute => (
-                      <option key={minute} value={minute}>
-                        {String(minute).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
+                      <select
+                        value={range.endM}
+                        onChange={e => updateTimeRange(range.id, 'endM', parseInt(e.target.value))}
+                      >
+                        {[0, 15, 30, 45].map(minute => (
+                          <option key={minute} value={minute}>
+                            {String(minute).padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
                 {timeRanges.length > 1 && (
@@ -939,6 +1011,17 @@ function CalculatorStyles() {
         color: var(--text);
       }
 
+      .cycle-note {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: var(--accent-bg);
+        border: 1px solid rgba(129, 140, 248, 0.2);
+        color: var(--text-soft);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
       .result-top-comparison {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1039,7 +1122,8 @@ function CalculatorStyles() {
       }
 
       .toggle-row {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
         background: var(--surface2);
         padding: 6px;
@@ -1049,7 +1133,6 @@ function CalculatorStyles() {
       .toggle-opt {
         all: unset;
         box-sizing: border-box;
-        flex: 1;
         padding: 12px 14px;
         border-radius: 10px;
         font-size: 14px;
@@ -1121,27 +1204,34 @@ function CalculatorStyles() {
         margin-bottom: 8px;
       }
 
-      .trange-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+      .trange-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
       }
 
-      .trange-row:last-of-type {
-        margin-bottom: 0;
+      .trange-group {
+        min-width: 0;
       }
 
       .trange-label {
+        display: block;
         font-size: 12px;
         color: var(--text-soft);
         font-weight: 700;
-        min-width: 50px;
         text-transform: uppercase;
+        margin-bottom: 6px;
       }
 
-      .trange-row select {
-        flex: 1;
+      .trange-selects {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+      }
+
+      .trange-selects select {
+        width: 100%;
         background: var(--surface3);
         border: 1px solid var(--border);
         border-radius: 10px;
@@ -1155,6 +1245,7 @@ function CalculatorStyles() {
 
       .trange-separator {
         color: var(--muted);
+        font-weight: 800;
       }
 
       .trange-remove {
@@ -1168,7 +1259,7 @@ function CalculatorStyles() {
         padding: 9px 12px;
         font-size: 12px;
         font-weight: 800;
-        margin-top: 8px;
+        margin-top: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1345,6 +1436,10 @@ function CalculatorStyles() {
           grid-template-columns: 1fr;
         }
 
+        .trange-grid {
+          grid-template-columns: 1fr;
+        }
+
         .result-top-price {
           font-size: 42px;
         }
@@ -1358,10 +1453,6 @@ function CalculatorStyles() {
           flex-direction: row;
           justify-content: space-between;
           align-items: center;
-        }
-
-        .trange-row {
-          flex-wrap: wrap;
         }
       }
     `}</style>
