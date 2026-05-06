@@ -376,6 +376,7 @@ export default function Calculator({ prices, currentHour }: Props) {
         ))}
       </div>
 
+      {/* APARATOS */}
       <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">⚡ Aparatos por horas</div>
@@ -435,8 +436,9 @@ export default function Calculator({ prices, currentHour }: Props) {
             </div>
           )}
 
-          <div className="calculator-grid">
-            <div className="big-field">
+          {/* APARATO + POTENCIA → 2 columnas alineadas */}
+          <div className="form-grid form-grid-2">
+            <div className="field-group">
               <label>Aparato</label>
               <select value={timeApp} onChange={e => handleTimeAppChange(e.target.value)}>
                 {Object.entries(appliances)
@@ -455,11 +457,11 @@ export default function Calculator({ prices, currentHour }: Props) {
               </select>
             </div>
 
-            <div className="big-field">
+            <div className="field-group">
               <label>
                 {getAppType(timeApp) === 'cycle'
-                  ? 'Consumo total estimado (kWh)'
-                  : 'Potencia estimada (kW)'}
+                  ? 'Consumo total (kWh)'
+                  : 'Potencia (kW)'}
               </label>
               <input
                 type="number"
@@ -472,7 +474,8 @@ export default function Calculator({ prices, currentHour }: Props) {
             </div>
           </div>
 
-          <div className="big-field">
+          {/* FRANJAS DE USO */}
+          <div className="field-group">
             <label>Franjas de uso</label>
 
             {timeRanges.map(range => (
@@ -555,11 +558,12 @@ export default function Calculator({ prices, currentHour }: Props) {
           </div>
 
           <button type="button" className="btn-calc-big" onClick={calcTime}>
-            Calcular ⚡
+            Calcular
           </button>
         </div>
       </div>
 
+      {/* COCHE EV */}
       <div className={`calc-section ${activeCalc === 'ev' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">🔋 Coche eléctrico</div>
@@ -605,8 +609,9 @@ export default function Calculator({ prices, currentHour }: Props) {
             </div>
           )}
 
-          <div className="calculator-grid ev-grid">
-            <div className="big-field">
+          {/* Modelo + Tipo de carga */}
+          <div className="form-grid form-grid-2">
+            <div className="field-group">
               <label>Modelo</label>
               <select value={evModel} onChange={e => setEvModel(e.target.value)}>
                 {Object.entries(cars).map(([key, value]) => (
@@ -617,9 +622,9 @@ export default function Calculator({ prices, currentHour }: Props) {
               </select>
             </div>
 
-            <div className="big-field">
+            <div className="field-group">
               <label>Tipo de carga</label>
-              <div className="toggle-row big">
+              <div className="toggle-row">
                 <button
                   type="button"
                   className={`toggle-opt ${evChargeMode === 'home' ? 'active' : ''}`}
@@ -636,9 +641,12 @@ export default function Calculator({ prices, currentHour }: Props) {
                 </button>
               </div>
             </div>
+          </div>
 
-            <div className="big-field">
-              <label>Carga desde</label>
+          {/* Carga desde + Hasta */}
+          <div className="form-grid form-grid-2">
+            <div className="field-group">
+              <label>Carga desde (%)</label>
               <input
                 type="number"
                 value={evFrom}
@@ -648,8 +656,8 @@ export default function Calculator({ prices, currentHour }: Props) {
               />
             </div>
 
-            <div className="big-field">
-              <label>Hasta</label>
+            <div className="field-group">
+              <label>Hasta (%)</label>
               <input
                 type="number"
                 value={evTo}
@@ -658,25 +666,26 @@ export default function Calculator({ prices, currentHour }: Props) {
                 max="100"
               />
             </div>
+          </div>
 
-            <div className="big-field">
-              <label>Hora de carga</label>
-              <select value={evHour} onChange={e => setEvHour(parseInt(e.target.value))}>
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {h(i)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Hora de carga */}
+          <div className="field-group">
+            <label>Hora de carga</label>
+            <select value={evHour} onChange={e => setEvHour(parseInt(e.target.value))}>
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>
+                  {h(i)}
+                </option>
+              ))}
+            </select>
           </div>
 
           {evModel === 'custom' && (
             <div className="custom-block">
               <div className="custom-block-title">Datos personalizados</div>
 
-              <div className="calculator-grid">
-                <div className="big-field">
+              <div className="form-grid form-grid-2">
+                <div className="field-group">
                   <label>Batería (kWh)</label>
                   <input
                     type="number"
@@ -688,7 +697,7 @@ export default function Calculator({ prices, currentHour }: Props) {
                   />
                 </div>
 
-                <div className="big-field">
+                <div className="field-group">
                   <label>kWh / 100 km</label>
                   <input
                     type="number"
@@ -704,11 +713,12 @@ export default function Calculator({ prices, currentHour }: Props) {
           )}
 
           <button type="button" className="btn-calc-big" onClick={calcEv}>
-            Calcular carga →
+            Calcular carga
           </button>
         </div>
       </div>
 
+      {/* MI DIA */}
       <div className={`calc-section ${activeCalc === 'myday' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">📋 Mi día completo</div>
@@ -753,8 +763,8 @@ export default function Calculator({ prices, currentHour }: Props) {
           )}
 
           <div className="myday-add">
-            <div className="calculator-grid">
-              <div className="big-field">
+            <div className="form-grid form-grid-2">
+              <div className="field-group">
                 <label>Aparato</label>
                 <select value={myDayApp} onChange={e => setMyDayApp(e.target.value)}>
                   <optgroup label="Aparatos">
@@ -769,29 +779,7 @@ export default function Calculator({ prices, currentHour }: Props) {
                 </select>
               </div>
 
-              <div className="big-field">
-                <label>Hora</label>
-                <select value={myDayHour} onChange={e => setMyDayHour(parseInt(e.target.value))}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {String(i).padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="big-field">
-                <label>Minutos</label>
-                <select value={myDayMin} onChange={e => setMyDayMin(parseInt(e.target.value))}>
-                  {[0, 15, 30, 45].map(minute => (
-                    <option key={minute} value={minute}>
-                      {String(minute).padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="big-field">
+              <div className="field-group">
                 <label>Duración (h)</label>
                 <input
                   type="number"
@@ -805,6 +793,30 @@ export default function Calculator({ prices, currentHour }: Props) {
                   step="1"
                   inputMode="numeric"
                 />
+              </div>
+            </div>
+
+            <div className="form-grid form-grid-2">
+              <div className="field-group">
+                <label>Hora</label>
+                <select value={myDayHour} onChange={e => setMyDayHour(parseInt(e.target.value))}>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {String(i).padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label>Minutos</label>
+                <select value={myDayMin} onChange={e => setMyDayMin(parseInt(e.target.value))}>
+                  {[0, 15, 30, 45].map(minute => (
+                    <option key={minute} value={minute}>
+                      {String(minute).padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -894,6 +906,10 @@ export default function Calculator({ prices, currentHour }: Props) {
 function CalculatorStyles() {
   return (
     <style jsx global>{`
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
       .section-header {
         margin: 32px 0 16px;
         padding: 0 4px;
@@ -911,9 +927,10 @@ function CalculatorStyles() {
         color: var(--text-soft);
       }
 
+      /* TABS NAV */
       .calc-nav {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
         margin-bottom: 16px;
       }
@@ -934,6 +951,7 @@ function CalculatorStyles() {
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        min-width: 0;
       }
 
       .calc-nav-btn:hover {
@@ -959,6 +977,7 @@ function CalculatorStyles() {
         letter-spacing: 0.5px;
       }
 
+      /* SECTIONS */
       .calc-section {
         display: none;
         margin-bottom: 16px;
@@ -982,6 +1001,7 @@ function CalculatorStyles() {
         margin-bottom: 18px;
       }
 
+      /* RESULT TOP */
       .result-top {
         background: linear-gradient(135deg, var(--surface2), var(--surface));
         border: 1px solid var(--border);
@@ -1000,7 +1020,7 @@ function CalculatorStyles() {
 
       .result-top-price {
         font-family: 'Inter', sans-serif;
-        font-size: clamp(40px, 6vw, 58px);
+        font-size: clamp(36px, 6vw, 56px);
         font-weight: 800;
         line-height: 1;
         margin-bottom: 8px;
@@ -1024,7 +1044,7 @@ function CalculatorStyles() {
 
       .result-top-comparison {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
         margin-top: 14px;
         padding-top: 14px;
@@ -1035,6 +1055,7 @@ function CalculatorStyles() {
         display: flex;
         flex-direction: column;
         gap: 2px;
+        min-width: 0;
       }
 
       .result-mini-label {
@@ -1050,17 +1071,9 @@ function CalculatorStyles() {
         font-weight: 800;
       }
 
-      .result-mini-value.green {
-        color: var(--green-bright);
-      }
-
-      .result-mini-value.red {
-        color: var(--red);
-      }
-
-      .result-mini-value.accent {
-        color: var(--accent);
-      }
+      .result-mini-value.green { color: var(--green-bright); }
+      .result-mini-value.red { color: var(--red); }
+      .result-mini-value.accent { color: var(--accent); }
 
       .range-details {
         margin-top: 12px;
@@ -1069,83 +1082,110 @@ function CalculatorStyles() {
         line-height: 1.6;
       }
 
-      .calculator-grid {
+      /* ============================================
+         FORM GRID SYSTEM (REUSABLE)
+         ============================================ */
+      .form-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .calculator-grid.ev-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .big-field {
+        gap: 12px;
         margin-bottom: 14px;
       }
 
-      .big-field label {
-        display: block;
-        font-size: 12px;
-        color: var(--text-soft);
-        margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
+      .form-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .big-field select,
-      .big-field input {
+      .form-grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      /* FIELD GROUP - identical for all calcs (same as Mi día style) */
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        margin-bottom: 14px;
+      }
+
+      .form-grid .field-group {
+        margin-bottom: 0;
+      }
+
+      .field-group label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-soft);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+
+      .field-group select,
+      .field-group input {
         width: 100%;
+        max-width: 100%;
         background: var(--surface2);
         border: 1px solid var(--border);
         border-radius: 12px;
         color: var(--text);
         font-family: 'DM Sans', sans-serif;
-        font-size: 16px;
-        padding: 14px 16px;
+        font-size: 15px;
+        padding: 0 14px;
+        height: 50px;
+        line-height: 50px;
         outline: none;
         appearance: none;
+        -webkit-appearance: none;
         transition: border-color 0.15s ease;
-        min-height: 50px;
+        box-sizing: border-box;
       }
 
-      .big-field select:focus,
-      .big-field input:focus {
+      .field-group input {
+        line-height: normal;
+      }
+
+      .field-group select:focus,
+      .field-group input:focus {
         border-color: var(--accent);
       }
 
-      .big-field select {
+      .field-group select {
         background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a8aabc' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 16px center;
-        padding-right: 40px;
+        background-position: right 14px center;
+        padding-right: 36px;
       }
 
+      /* TOGGLE: matches input height for alignment */
       .toggle-row {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px;
+        gap: 4px;
         background: var(--surface2);
-        padding: 6px;
+        border: 1px solid var(--border);
         border-radius: 12px;
+        padding: 4px;
+        height: 50px;
+        box-sizing: border-box;
       }
 
       .toggle-opt {
         all: unset;
         box-sizing: border-box;
-        padding: 12px 14px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 800;
+        padding: 0 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
         color: var(--text-soft);
         background: transparent;
-        min-height: 44px;
         text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
         cursor: pointer;
+        min-width: 0;
       }
 
       .toggle-opt:hover {
@@ -1159,6 +1199,7 @@ function CalculatorStyles() {
         box-shadow: inset 0 0 0 1px var(--border);
       }
 
+      /* BIG CALC BUTTON */
       .btn-calc-big {
         all: unset;
         box-sizing: border-box;
@@ -1168,10 +1209,10 @@ function CalculatorStyles() {
         border-radius: 14px;
         font-family: 'Syne', sans-serif;
         font-weight: 800;
-        font-size: 16px;
+        font-size: clamp(14px, 2.5vw, 16px);
         padding: 16px;
-        min-height: 56px;
-        margin-top: 8px;
+        min-height: 52px;
+        margin-top: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1179,6 +1220,7 @@ function CalculatorStyles() {
         letter-spacing: -0.2px;
         transition: all 0.2s ease;
         cursor: pointer;
+        white-space: nowrap;
       }
 
       .btn-calc-big:hover {
@@ -1196,6 +1238,7 @@ function CalculatorStyles() {
         color: #06150c;
       }
 
+      /* TIME RANGE CARDS */
       .time-range-card {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -1216,10 +1259,11 @@ function CalculatorStyles() {
 
       .trange-label {
         display: block;
-        font-size: 12px;
+        font-size: 11px;
         color: var(--text-soft);
         font-weight: 700;
         text-transform: uppercase;
+        letter-spacing: 1px;
         margin-bottom: 6px;
       }
 
@@ -1227,25 +1271,32 @@ function CalculatorStyles() {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
 
       .trange-selects select {
         width: 100%;
+        max-width: 100%;
         background: var(--surface3);
         border: 1px solid var(--border);
         border-radius: 10px;
         color: var(--text);
-        padding: 10px 12px;
+        padding: 0 10px;
         font-family: inherit;
-        font-size: 15px;
+        font-size: 14px;
         appearance: none;
-        min-height: 42px;
+        -webkit-appearance: none;
+        height: 42px;
+        text-align: center;
+        text-align-last: center;
+        box-sizing: border-box;
+        min-width: 0;
       }
 
       .trange-separator {
         color: var(--muted);
         font-weight: 800;
+        font-size: 16px;
       }
 
       .trange-remove {
@@ -1280,11 +1331,11 @@ function CalculatorStyles() {
         color: var(--accent);
         border: 1px dashed rgba(129, 140, 248, 0.4);
         border-radius: 12px;
-        padding: 13px 14px;
-        font-size: 14px;
+        padding: 12px 14px;
+        font-size: 13px;
         font-weight: 800;
         margin-top: 8px;
-        min-height: 48px;
+        min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1315,6 +1366,7 @@ function CalculatorStyles() {
         margin-bottom: 12px;
       }
 
+      /* MI DIA */
       .myday-add {
         padding-bottom: 18px;
         margin-bottom: 18px;
@@ -1351,6 +1403,7 @@ function CalculatorStyles() {
 
       .myday-icon {
         font-size: 24px;
+        flex-shrink: 0;
       }
 
       .myday-content {
@@ -1372,6 +1425,7 @@ function CalculatorStyles() {
         font-family: 'Inter', sans-serif;
         font-weight: 800;
         font-size: 16px;
+        flex-shrink: 0;
       }
 
       .myday-remove {
@@ -1390,6 +1444,7 @@ function CalculatorStyles() {
         justify-content: center;
         transition: all 0.2s ease;
         cursor: pointer;
+        flex-shrink: 0;
       }
 
       .myday-remove:hover {
@@ -1421,38 +1476,82 @@ function CalculatorStyles() {
         line-height: 1.5;
       }
 
-      @media (max-width: 767px) {
-        .calc-nav {
-          grid-template-columns: 1fr;
-        }
+      /* ============================================
+         RESPONSIVE
+         ============================================ */
 
+      /* Tablet → small desktop: keep 2 cols on form-grid-2 */
+      @media (max-width: 767px) {
         .card {
           padding: 18px;
           border-radius: 16px;
         }
 
-        .calculator-grid,
-        .calculator-grid.ev-grid {
-          grid-template-columns: 1fr;
+        /* form-grid-2 keeps 2 columns on mobile (clean layout) */
+        .form-grid-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
         }
 
+        /* form-grid-3 collapses to 2 cols (no 3-col on mobile) */
+        .form-grid-3 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        /* trange keeps 2 cols (Desde / Hasta) */
         .trange-grid {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
         }
 
-        .result-top-price {
-          font-size: 42px;
+        .field-group select,
+        .field-group input {
+          font-size: 14px;
+          padding: 0 12px;
+          padding-right: 32px;
+          height: 48px;
+          line-height: 48px;
+        }
+
+        .field-group input {
+          line-height: normal;
+        }
+
+        .toggle-row {
+          height: 48px;
+        }
+
+        .toggle-opt {
+          font-size: 12px;
+        }
+
+        .trange-selects select {
+          height: 40px;
+          font-size: 13px;
         }
 
         .result-top-comparison {
           grid-template-columns: 1fr;
-          gap: 10px;
+          gap: 8px;
         }
 
         .result-mini {
           flex-direction: row;
           justify-content: space-between;
           align-items: center;
+        }
+
+        .calc-nav {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      /* Very small phones: collapse to 1 column */
+      @media (max-width: 380px) {
+        .form-grid-2,
+        .form-grid-3 {
+          grid-template-columns: 1fr;
         }
       }
     `}</style>
