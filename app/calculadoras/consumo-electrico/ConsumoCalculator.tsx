@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fmtMoney, color, h, calculateCyclePrice, PriceData } from '@/lib/utils';
-import { Zap, TrendingDown, TrendingUp, Sparkles, ClipboardList } from 'lucide-react';
+import { TrendingDown, TrendingUp, Sparkles, ClipboardList } from 'lucide-react';
 
 export default function ConsumoCalculator() {
   const [prices, setPrices] = useState<PriceData[]>([]);
