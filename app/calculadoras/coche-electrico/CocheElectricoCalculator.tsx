@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fmtMoney, color, h, cars, FAST_CHARGE_PRICE, GASOLINE_PRICE_PER_LITER, GASOLINE_CONSUMPTION_L_PER_100, getPriceAtHour, PriceData } from '@/lib/utils';
-import { Battery, Car, Zap, Home, Fuel, TrendingDown } from 'lucide-react';
+import { Battery, Gauge, Fuel, TrendingDown } from 'lucide-react';
 
 export default function CocheElectricoCalculator() {
   const [prices, setPrices] = useState<PriceData[]>([]);
@@ -63,7 +63,7 @@ export default function CocheElectricoCalculator() {
               <span className="ev-mini-value green">{fmtMoney(costBest)}</span>
             </div>
             <div className="ev-mini">
-              <span className="ev-mini-label"><Zap size={11} /> Carga rápida</span>
+              <span className="ev-mini-label"><Gauge size={11} /> Carga rápida</span>
               <span className="ev-mini-value red">{fmtMoney(costFast)}</span>
             </div>
             <div className="ev-mini">

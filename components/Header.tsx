@@ -40,6 +40,8 @@ export default function Header() {
           type="button"
           className="menu-btn mobile-only"
           onClick={() => setMenuOpen(!menuOpen)}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
           aria-label="Menú"
         >
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -48,7 +50,7 @@ export default function Header() {
     </nav>
 
     {menuOpen && (
-      <div className="mobile-menu mobile-only">
+      <div id="mobile-menu" className="mobile-menu mobile-only">
         <Link href="/" onClick={() => setMenuOpen(false)}>Precio luz hoy</Link>
         <Link href="/precio-luz-manana" onClick={() => setMenuOpen(false)}>Precio luz mañana</Link>
         <Link href="/calculadoras" onClick={() => setMenuOpen(false)}>Calculadoras</Link>
@@ -89,6 +91,7 @@ export default function Header() {
         top: calc(100% + 12px);
         right: 0;
         width: min(320px, calc(100vw - 32px));
+        max-width: 340px;
         background: rgba(15, 16, 28, 0.98);
         border: 1px solid var(--border);
         border-radius: 24px;
@@ -100,7 +103,7 @@ export default function Header() {
         z-index: 200;
       }
 
-      :global(.mobile-menu a) {
+      .mobile-menu a {
         display: block;
         padding: 15px 18px;
         color: var(--text);
@@ -111,7 +114,7 @@ export default function Header() {
         transition: background 0.15s;
       }
 
-      :global(.mobile-menu a:hover) {
+      .mobile-menu a:hover {
         background: var(--surface2);
         text-decoration: none;
       }
@@ -156,4 +159,5 @@ export default function Header() {
       }
     `}</style>
   </header>
-);
+  );
+}

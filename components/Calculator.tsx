@@ -13,7 +13,7 @@ import {
   PriceData
 } from '@/lib/utils';
 import {
-  Zap, Battery, ClipboardList, Plus, X, Wrench,
+  Clock, Gauge, Battery, ClipboardList, Plus, X, Wrench,
   Home, Sparkles, Settings, Calculator as CalcIcon
 } from 'lucide-react';
 
@@ -359,7 +359,7 @@ export default function Calculator({ prices, currentHour }: Props) {
   const totalKwh = myDayItems.reduce((sum, item) => sum + item.kwh, 0);
 
   const calcTabs = [
-    { id: 'time' as const, Icon: Zap, label: 'Aparatos' },
+    { id: 'time' as const, Icon: Clock, label: 'Aparatos' },
     { id: 'ev' as const, Icon: Battery, label: 'Coche EV' },
     { id: 'myday' as const, Icon: ClipboardList, label: 'Mi día' }
   ];
@@ -396,7 +396,7 @@ export default function Calculator({ prices, currentHour }: Props) {
       <div className={`calc-section ${activeCalc === 'time' ? 'active' : ''}`}>
         <div className="card">
           <div className="card-title">
-            <Zap size={16} className="icon-accent" />
+            <Clock size={16} className="icon-accent" />
             <span>Aparatos por horas</span>
           </div>
 
@@ -661,7 +661,7 @@ export default function Calculator({ prices, currentHour }: Props) {
                   className={`toggle-opt ${evChargeMode === 'fast' ? 'active' : ''}`}
                   onClick={() => setEvChargeMode('fast')}
                 >
-                  <Zap size={14} />
+                  <Gauge size={14} />
                   Rápida
                 </button>
               </div>

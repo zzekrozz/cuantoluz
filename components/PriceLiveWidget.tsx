@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Zap, TrendingDown, ExternalLink } from 'lucide-react';
+import { Clock, TrendingDown, ExternalLink } from 'lucide-react';
 import { color, fmt, h, semClass, PriceData } from '@/lib/utils';
 
 interface Props {
@@ -45,7 +45,7 @@ export default function PriceLiveWidget({ variant = 'compact', ctaText }: Props)
     <>
       <div className={`price-live-widget ${sc}`}>
         <div className="plw-header">
-          <Zap size={16} className="icon-accent" />
+          <Clock size={16} className="icon-accent" />
           <span className="plw-label">Precio de la luz ahora · {h(currentHour)}</span>
         </div>
 

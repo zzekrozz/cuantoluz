@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fmt, fmtE, h, color, semClass, PriceData } from '@/lib/utils';
-import { Calendar, BarChart3, Moon, Zap, Clock } from 'lucide-react';
+import { BarChart3, Moon, Clock } from 'lucide-react';
 import RelatedLinks from '@/components/RelatedLinks';
 
 export default function TomorrowClient() {
@@ -109,7 +109,7 @@ export default function TomorrowClient() {
             <div className="t-unit">{fmt(minP.price)} c€/kWh</div>
           </div>
           <div className="divider">
-            <div className="t-label"><Zap size={14} /> Hora más cara</div>
+            <div className="t-label"><Clock size={14} /> Hora más cara</div>
             <div className="t-price inter-numbers" style={{ color: 'var(--red)' }}>{h(maxP.hour)}</div>
             <div className="t-unit">{fmt(maxP.price)} c€/kWh</div>
           </div>

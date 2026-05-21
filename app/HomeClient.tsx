@@ -9,7 +9,7 @@ import {
 } from '@/lib/utils';
 import RelatedLinks from '@/components/RelatedLinks';
 import {
-  Zap, Moon, BarChart3, Calendar, BookOpen, Shirt,
+  Clock, Moon, BarChart3, Calendar, Shirt,
   CheckCircle2, AlertCircle, AlertTriangle, Circle, Car, Snowflake, ClipboardList
 } from 'lucide-react';
 
@@ -196,7 +196,7 @@ function HomeContent({
         <div className="hero-grid">
           <div className="hero-block">
             <div className="hero-label">
-              <Zap size={14} className="icon-accent" style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+              <Clock size={14} className="icon-accent" style={{ verticalAlign: 'middle', marginRight: '4px' }} />
               {isToday ? `Ahora · ${h(currentHour)}` : 'Primera hora de mañana'}
             </div>
             <div
