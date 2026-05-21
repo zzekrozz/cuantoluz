@@ -7,7 +7,6 @@ import {
   color, semClass,
   PriceData
 } from '@/lib/utils';
-import Calculator from '@/components/Calculator';
 import RelatedLinks from '@/components/RelatedLinks';
 import {
   Zap, Moon, BarChart3, Calendar, BookOpen, Shirt,
@@ -322,8 +321,6 @@ function HomeContent({
         </div>
       </section>
 
-      {/* CALCULADORA EN HOME - mantiene la calculadora original */}
-      <Calculator prices={prices} currentHour={isToday ? currentHour : 0} />
 
       <div className="card" style={{ marginTop: '32px' }}>
         <div className="card-title">
